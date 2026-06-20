@@ -17,10 +17,9 @@ public final class JavaServer {
 
             server.createContext("/", new baseHandler());
             server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
-
             server.start();
-            System.out.println("Server is running on http://localhost:8000");
 
+            System.out.println("Server is running on http://localhost:8000");
         } catch (IOException e) {
             System.out.println("Error starting the server: " + e.getMessage());
         }
@@ -36,6 +35,7 @@ public final class JavaServer {
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(bytes);
             }
+            
         }
 
     }
