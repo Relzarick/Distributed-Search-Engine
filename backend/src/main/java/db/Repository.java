@@ -4,14 +4,15 @@ import org.bson.Document;
 
 import java.util.List;
 
+/**
+ * All databases should implement this interface
+ */
 public interface Repository {
     void fetch();
 
-    void insert(Document doc);
+    void insert(List<Document> batch);
 
-    void batchInsert(List<Document> batch);
-
-    int countDoc();
+    Boolean ifExists();
 
     void close();
 }

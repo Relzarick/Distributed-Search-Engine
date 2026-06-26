@@ -19,7 +19,7 @@ public final class AppSetup {
             throw new AppSetupException("No .csv file found in " + pathName);
 
         CsvParser CsvParser = new CsvParser(csvfile[0]);
-        CsvParser.parse(db::batchInsert);
+        CsvParser.parse(db::insert);
     }
 
     public static class AppSetupException extends Exception {

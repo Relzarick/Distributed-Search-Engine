@@ -11,7 +11,7 @@ void main() {
     Repository db = new Database();
 
     try {
-        if (db.countDoc() == 0)
+        if (!db.ifExists())
             new AppSetup(db);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
@@ -22,7 +22,7 @@ void main() {
 
         IO.println("Server is running on http://localhost:8080");
 
-        db.fetch(); // testing
+//        db.fetch(); // testing
     } catch (AppSetup.AppSetupException e) {
         IO.println(e.getMessage());
     } catch (IOException e) {

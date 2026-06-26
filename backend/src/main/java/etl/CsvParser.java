@@ -12,7 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+
 public final class CsvParser {
+    /**
+     * Ingests .csv files and parses it for database
+     */
     public CsvParser(File file) {
         this.file = file;
         this.format = CSVFormat.EXCEL.builder()
@@ -32,7 +36,7 @@ public final class CsvParser {
                 Document doc = new Document();
 
                 for (String header : headerNames) {
-                    doc.append(header, record.get(header));
+                    doc.append(header, TypeConverter.convert(record.get(header)));
                 }
 
                 batch.add(doc);
@@ -42,7 +46,7 @@ public final class CsvParser {
                     batch.clear();
                 }
             }
-//
+
             if (!batch.isEmpty())
                 consumer.accept(batch);
 
@@ -55,5 +59,3 @@ public final class CsvParser {
     File file;
     CSVFormat format;
 }
-
-// if saving it, have to make sure this gets gc
