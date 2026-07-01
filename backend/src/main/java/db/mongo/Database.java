@@ -1,9 +1,10 @@
-package db;
+package db.mongo;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public final class Database implements Repository {
     @Override
     public void fetch() {
         MongoCollection<Document> col = db.getCollection("col");
-//        System.out.println(col.find(Filters.eq("id", 2)).first());
+        System.out.println(col.find(Filters.eq("id", 2)).first());
     }
 
     @Override

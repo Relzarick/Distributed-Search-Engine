@@ -1,25 +1,38 @@
 package bootstrap;
 
-import db.Repository;
+import db.lettuce.Cache;
+import db.lettuce.CacheClient;
+import db.mongo.Repository;
 import etl.CsvParser;
+import indexer.InversedIndexer;
+import tokenizer.StandardTokenization;
 
 import java.io.File;
+import java.io.IOException;
 
 public final class AppSetup {
     public AppSetup(Repository db) throws AppSetupException {
         String pathName = "data";
 
         File dataDir = new File(pathName);
-        File[] csvfile = dataDir.listFiles((dir, name) -> name.endsWith(".csv"));
+        File[] csvfile = dataDir.listFiles((_, name) -> name.endsWith(".csv"));
 
         if (csvfile == null)
-            throw new AppSetupException("Data dir was not found");
+            throw new AppSetupException(pathName + " dir was not found");
 
         if (csvfile.length == 0)
             throw new AppSetupException("No .csv file found in " + pathName);
 
-        CsvParser CsvParser = new CsvParser(csvfile[0]);
-        CsvParser.parse(db::insert);
+        try (CsvParser CsvParser = new CsvParser(csvfile[0]);
+             Cache cache = new CacheClient()) {
+
+            CsvParser.parse(db::insert);
+            InversedIndexer indexer = new InversedIndexer(cache, db, new StandardTokenization());
+
+        } catch (IOException | RuntimeException e) {
+            throw new AppSetupException(e.getMessage());
+        }
+
     }
 
     public static class AppSetupException extends Exception {
@@ -30,5 +43,5 @@ public final class AppSetup {
 
 }
 
-// TODO need shutdown hook to close db on JVM exit (return after fully built)
-// This can just become a static method
+// TODO shutdown hook to close redis? (return after fully built)
+// TODO virtual threads

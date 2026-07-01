@@ -1,5 +1,7 @@
 package tokenizer;
 
+import java.util.List;
+
 public class Tokenizer {
     private final TokenStrategy strat;
 
@@ -7,8 +9,8 @@ public class Tokenizer {
         this.strat = strat;
     }
 
-    public void tokenize(String inputs) {
-        System.out.println(strat.toTokens(inputs));
+    public List<String> tokenize(String inputs) {
+        return strat.toTokens(inputs);
     }
 
 }

@@ -4,9 +4,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import db.Database;
-import db.Repository;
-
+import db.mongo.Database;
+import db.mongo.Repository;
 
 void main() {
     Repository db = new Database();
@@ -23,13 +22,14 @@ void main() {
 
         IO.println("Server is running on http://localhost:8080");
 
-//        db.fetch(); // testing
+        db.fetch(); // testing
     } catch (AppSetup.AppSetupException e) {
         IO.println(e.getMessage());
     } catch (IOException e) {
-        IO.println("Error starting the server: " + e.getMessage());
+        IO.println("IO Error can't start the server: " + e.getMessage());
     }
 
+    // close db when jvm exits
 }
 
 private static class baseHandler implements HttpHandler {

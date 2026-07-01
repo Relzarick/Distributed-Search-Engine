@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 
-public final class CsvParser {
+public final class CsvParser implements AutoCloseable {
     File file;
     CSVFormat format;
 
@@ -29,7 +29,7 @@ public final class CsvParser {
                 .get();
     }
 
-    public void parse(Consumer<List<Document>> consumer) {
+    public void parse(Consumer<List<Document>> consumer) throws IOException {
         try (CSVParser parser = CSVParser.parse(file, StandardCharsets.UTF_8, format)
         ) {
             String[] headerNames = parser.getHeaderNames().toArray(new String[0]);
@@ -54,9 +54,12 @@ public final class CsvParser {
                 consumer.accept(batch);
 
         } catch (IOException e) {
-            System.out.println("ERROR with parsing: " + e.getMessage());
+            throw new IOException("IO ERROR with parsing: ", e);
         }
 
     }
 
+    @Override
+    public void close() {
+    }
 }
