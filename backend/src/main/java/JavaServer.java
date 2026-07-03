@@ -11,7 +11,7 @@ void main() {
 
     try {
         if (!db.ifExists())
-            new AppSetup(db);
+            AppSetup.run(db);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 

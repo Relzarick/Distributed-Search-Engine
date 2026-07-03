@@ -1,9 +1,13 @@
 package bootstrap;
 
+import db.Cache;
+import db.CacheClient;
 import db.Repository;
 import etl.CsvParser;
+import indexer.InversedIndexer;
 import org.bson.Document;
 import timer.StopWatch;
+import tokenizer.StandardTokenization;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -16,7 +20,10 @@ import java.util.concurrent.Future;
 
 public final class AppSetup {
 
-    public AppSetup(Repository db) throws AppSetupException {
+    private AppSetup() {
+    }
+
+    public static void run(Repository db) throws AppSetupException {
         String pathName = "data";
 
         File dataDir = new File(pathName);
@@ -28,36 +35,31 @@ public final class AppSetup {
         if (csv.length == 0)
             throw new AppSetupException("No .csv file found in " + pathName);
 
-//        try (Cache cache = new CacheClient();
-        try (CsvParser parser = new CsvParser(csv[0])) {
+        try (Cache cache = new CacheClient(); CsvParser parser = new CsvParser(csv[0])) {
 
             StopWatch timer = new StopWatch("parser");
             Iterator<List<Document>> docList = parser.returnTasks();
+            InversedIndexer indexer = new InversedIndexer(cache, new StandardTokenization());
 
-            createWorkersForTasks(docList, db);
+            createWorkersForTasks(docList, indexer, db);
 
             timer.stop();
         } catch (Exception e) {
             throw new AppSetupException(e.getMessage());
         }
-
     }
 
-    private void createWorkersForTasks(Iterator<List<Document>> tasks, Repository db) {
+    private static void createWorkersForTasks(Iterator<List<Document>> tasks, InversedIndexer indexer, Repository db) {
         try (ExecutorService worker = Executors.newVirtualThreadPerTaskExecutor()) {
             List<Future<?>> futures = new ArrayList<>();
 
             while (tasks.hasNext()) {
                 List<Document> batch = tasks.next();
 
-                futures.add(
-                        worker.submit(() -> {
-//                            InversedIndexer indexer = new InversedIndexer(cache, new StandardTokenization());
-
-                            db.insert(batch);
-//                            indexer.insert(batch);
-                        })
-                );
+                futures.add(worker.submit(() -> {
+                    db.insert(batch);
+                    indexer.tokenizeToIndex(batch);
+                }));
 
             }
 

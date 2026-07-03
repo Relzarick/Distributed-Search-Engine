@@ -5,8 +5,9 @@ import org.bson.Document;
 import tokenizer.TokenStrategy;
 import tokenizer.Tokenizer;
 
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class InversedIndexer {
 
@@ -18,10 +19,16 @@ public final class InversedIndexer {
         tk = new Tokenizer(tokenizer);
     }
 
-    public void insert(List<Document> batch) {
-        Iterator<Document> t = batch.iterator();
+    public void tokenizeToIndex(List<Document> batch) {
 
-        
+        for (Document doc : batch) {
+            //  convert to list of string. numbers can ignore
+
+            Set<Map.Entry<String, Object>> t = doc.entrySet();
+
+            System.out.println(t);
+        }
+
     }
 
 }
