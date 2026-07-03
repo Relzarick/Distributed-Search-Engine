@@ -1,13 +1,12 @@
 import bootstrap.AppSetup;
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
-import db.mongo.Database;
-import db.mongo.Repository;
+import db.Database;
+import db.Repository;
 
 void main() {
+
     Repository db = new Database();
 
     try {

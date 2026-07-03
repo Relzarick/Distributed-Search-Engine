@@ -1,4 +1,4 @@
-package db.mongo;
+package db;
 
 import org.bson.Document;
 

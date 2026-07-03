@@ -1,4 +1,4 @@
-package db.lettuce;
+package db;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -6,6 +6,7 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 
 public final class CacheClient implements Cache {
+    
     private final RedisClient client;
     private final StatefulRedisConnection<String, String> connection;
     private final RedisCommands<String, String> commands;

@@ -1,19 +1,27 @@
 package indexer;
 
-import db.lettuce.Cache;
-import db.mongo.Repository;
+import db.Cache;
+import org.bson.Document;
 import tokenizer.TokenStrategy;
 import tokenizer.Tokenizer;
 
+import java.util.Iterator;
+import java.util.List;
+
 public final class InversedIndexer {
+
     private final Cache cache;
-    private final Repository db;
     private final Tokenizer tk;
 
-    public InversedIndexer(Cache redisClient, Repository database, TokenStrategy tokenizer) {
+    public InversedIndexer(Cache redisClient, TokenStrategy tokenizer) {
         cache = redisClient;
-        db = database;
         tk = new Tokenizer(tokenizer);
+    }
+
+    public void insert(List<Document> batch) {
+        Iterator<Document> t = batch.iterator();
+
+        
     }
 
 }

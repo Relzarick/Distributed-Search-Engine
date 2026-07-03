@@ -9,57 +9,64 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
-
 
 public final class CsvParser implements AutoCloseable {
-    File file;
-    CSVFormat format;
+
+    CSVParser records;
 
     /**
      * Ingests .csv files and parses it for database
      */
-    public CsvParser(File file) {
-        this.file = file;
-        this.format = CSVFormat.EXCEL.builder()
+    public CsvParser(File file) throws IOException {
+        CSVFormat format = CSVFormat.EXCEL.builder()
                 .setHeader()
                 .setSkipHeaderRecord(true)
                 .setIgnoreHeaderCase(true)
                 .get();
+
+        records = CSVParser.parse(file, StandardCharsets.UTF_8, format);
     }
 
-    public void parse(Consumer<List<Document>> consumer) throws IOException {
-        try (CSVParser parser = CSVParser.parse(file, StandardCharsets.UTF_8, format)
-        ) {
-            String[] headerNames = parser.getHeaderNames().toArray(new String[0]);
+    public Iterator<List<Document>> returnTasks() throws IOException {
+        String[] headerNames = records.getHeaderNames().toArray(new String[0]);
+
+        return new BatchIterator(headerNames, records.iterator());
+    }
+
+    @Override
+    public void close() throws Exception {
+
+    }
+
+    private record BatchIterator(
+            String[] headers,
+            Iterator<CSVRecord> records
+    ) implements Iterator<List<Document>> {
+
+        @Override
+        public boolean hasNext() {
+            return records.hasNext();
+        }
+
+        @Override
+        public List<Document> next() {
             List<Document> batch = new ArrayList<>();
 
-            for (CSVRecord record : parser) {
+            while (batch.size() < 5000 && records.hasNext()) {
+                CSVRecord record = records.next();
                 Document doc = new Document();
 
-                for (String header : headerNames) {
+                for (String header : headers) {
                     doc.append(header, TypeConverter.convert(record.get(header)));
                 }
 
                 batch.add(doc);
-
-                if (batch.size() == 1500) {
-                    consumer.accept(batch);
-                    batch.clear();
-                }
             }
 
-            if (!batch.isEmpty())
-                consumer.accept(batch);
-
-        } catch (IOException e) {
-            throw new IOException("IO ERROR with parsing: ", e);
+            return batch;
         }
-
     }
 
-    @Override
-    public void close() {
-    }
 }
