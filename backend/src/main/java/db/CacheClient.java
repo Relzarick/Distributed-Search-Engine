@@ -4,9 +4,11 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
+import org.bson.Document;
+
+import java.util.List;
 
 public final class CacheClient implements Cache {
-    
     private final RedisClient client;
     private final StatefulRedisConnection<String, String> connection;
     private final RedisCommands<String, String> commands;
@@ -21,14 +23,13 @@ public final class CacheClient implements Cache {
         commands = connection.sync();
     }
 
-    // need to expose commands
-    // a setter for now
+    @Override
+    public void set(List<Document> batch) {
+        connection.setAutoFlushCommands(false);
 
-    public void set(String key, String value) {
-        commands.set(key, value);
+        // basically async makes it keep firing instead of sending then pause?
 
-        // value should be generic
-        // need to take a batch of values
+        connection.setAutoFlushCommands(true);
     }
 
     @Override
@@ -36,4 +37,6 @@ public final class CacheClient implements Cache {
         connection.close();
         client.shutdown();
     }
+
+    // this is coupled to mongo now
 }

@@ -40,10 +40,7 @@ public final class CsvParser implements AutoCloseable {
 
     }
 
-    private record BatchIterator(
-            String[] headers,
-            Iterator<CSVRecord> records
-    ) implements Iterator<List<Document>> {
+    private record BatchIterator(String[] headers, Iterator<CSVRecord> records) implements Iterator<List<Document>> {
 
         @Override
         public boolean hasNext() {
@@ -58,9 +55,8 @@ public final class CsvParser implements AutoCloseable {
                 CSVRecord record = records.next();
                 Document doc = new Document();
 
-                for (String header : headers) {
+                for (String header : headers)
                     doc.append(header, TypeConverter.convert(record.get(header)));
-                }
 
                 batch.add(doc);
             }

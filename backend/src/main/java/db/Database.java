@@ -26,9 +26,11 @@ public final class Database implements Repository {
     }
 
     @Override
-    public void fetch() {
+    public Document fetch(String header, int value) {
         MongoCollection<Document> col = db.getCollection("col");
-        System.out.println(col.find(Filters.eq("id", 2)).first());
+        return col.find(Filters.eq(header, value)).first();
+
+        // change the param when built
     }
 
     @Override

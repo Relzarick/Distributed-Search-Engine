@@ -5,12 +5,11 @@ import org.bson.Document;
 import tokenizer.TokenStrategy;
 import tokenizer.Tokenizer;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public final class InversedIndexer {
-
     private final Cache cache;
     private final Tokenizer tk;
 
@@ -20,15 +19,33 @@ public final class InversedIndexer {
     }
 
     public void tokenizeToIndex(List<Document> batch) {
-
         for (Document doc : batch) {
-            //  convert to list of string. numbers can ignore
+            Iterator<Map.Entry<String, Object>> iterator = doc.entrySet().iterator();
 
-            Set<Map.Entry<String, Object>> t = doc.entrySet();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Object> field = iterator.next();
 
-            System.out.println(t);
+                if ("_id".equals(field.getKey()))
+                    continue;
+
+                if (field.getValue() instanceof String value) {
+                    List<String> tokens = tk.tokenize(value);
+
+                    if (tokens == null)
+                        iterator.remove();
+                    else
+                        field.setValue(tokens);
+                } else
+                    iterator.remove();
+            }
+
+            for (Map.Entry<String, Object> test : doc.entrySet()) {
+                System.out.println(test.getKey() + ": " + test.getValue());
+            }
+
         }
 
+//        cache.set(batch);
     }
 
 }

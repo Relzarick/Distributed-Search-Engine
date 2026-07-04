@@ -3,12 +3,10 @@ package tokenizer;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * Removes basic stop words
- */
-public class StandardTokenization extends BaseTokenization implements TokenStrategy {
+public final class StandardTokenizationV2 extends BaseTokenization implements TokenStrategy {
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
     private static final Pattern PUNCTUATION = Pattern.compile("^[^a-z']+|[^a-z']+$");
+    private static final Pattern NUMBERS = Pattern.compile("[0-9]");
 
     @Override
     public List<String> toTokens(String input) {
@@ -18,10 +16,13 @@ public class StandardTokenization extends BaseTokenization implements TokenStrat
 
         String lowerCaseInput = input.toLowerCase();
 
-        return WHITESPACE.splitAsStream(lowerCaseInput)
+        List<String> tokens = WHITESPACE.splitAsStream(lowerCaseInput)
+                .filter(token -> !NUMBERS.asPredicate().test(token))
                 .map(token -> PUNCTUATION.matcher(token).replaceAll(""))
                 .filter(token -> !STOP_WORDS.contains(token))
                 .toList();
+
+        return tokens.isEmpty() ? null : tokens;
     }
 
 }

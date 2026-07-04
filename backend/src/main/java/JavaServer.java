@@ -6,7 +6,6 @@ import db.Database;
 import db.Repository;
 
 void main() {
-
     Repository db = new Database();
 
     try {
@@ -21,7 +20,6 @@ void main() {
 
         IO.println("Server is running on http://localhost:8080");
 
-        db.fetch(); // testing
     } catch (AppSetup.AppSetupException e) {
         IO.println(e.getMessage());
     } catch (IOException e) {
