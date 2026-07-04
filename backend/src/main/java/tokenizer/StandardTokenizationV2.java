@@ -17,7 +17,7 @@ public final class StandardTokenizationV2 extends BaseTokenization implements To
         String lowerCaseInput = input.toLowerCase();
 
         List<String> tokens = WHITESPACE.splitAsStream(lowerCaseInput)
-                .filter(token -> !NUMBERS.asPredicate().test(token))
+                .filter(token -> !NUMBERS.matcher(token).find())
                 .map(token -> PUNCTUATION.matcher(token).replaceAll(""))
                 .filter(token -> !STOP_WORDS.contains(token))
                 .toList();

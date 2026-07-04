@@ -39,13 +39,9 @@ public final class InversedIndexer {
                     iterator.remove();
             }
 
-            for (Map.Entry<String, Object> test : doc.entrySet()) {
-                System.out.println(test.getKey() + ": " + test.getValue());
-            }
-
         }
 
-//        cache.set(batch);
+        cache.set(batch);
     }
 
 }

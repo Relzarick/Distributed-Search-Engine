@@ -27,9 +27,12 @@ public final class CacheClient implements Cache {
     public void set(List<Document> batch) {
         connection.setAutoFlushCommands(false);
 
-        // basically async makes it keep firing instead of sending then pause?
-
         connection.setAutoFlushCommands(true);
+    }
+
+    @Override
+    public void retrieve() {
+
     }
 
     @Override

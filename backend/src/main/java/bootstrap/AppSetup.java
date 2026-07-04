@@ -6,7 +6,7 @@ import etl.CsvParser;
 import indexer.InversedIndexer;
 import org.bson.Document;
 import timer.StopWatch;
-import tokenizer.StandardTokenization;
+import tokenizer.StandardTokenizationV2;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,14 +29,13 @@ public final class AppSetup {
         String pathName = "data";
         File csv = checkDirIfValid(pathName);
 
+        StopWatch timer = new StopWatch("parser");
         try (CsvParser parser = new CsvParser(csv)) {
-            StopWatch timer = new StopWatch("parser");
 
             Iterator<List<Document>> docList = parser.returnTasks();
-            InversedIndexer indexer = new InversedIndexer(new CacheClient(), new StandardTokenization());
+            InversedIndexer indexer = new InversedIndexer(new CacheClient(), new StandardTokenizationV2());
 
             createWorkersForTasks(docList, indexer, db);
-
 
             timer.stop();
         } catch (Exception e) {
@@ -45,10 +44,6 @@ public final class AppSetup {
 
     }
 
-    /**
-     * Create virtual threads to parallelize ingestion workload.
-     *
-     */
     private static void createWorkersForTasks(Iterator<List<Document>> tasks, InversedIndexer indexer, Repository db) {
         try (ExecutorService worker = Executors.newVirtualThreadPerTaskExecutor()) {
             List<Future<?>> futures = new ArrayList<>();
