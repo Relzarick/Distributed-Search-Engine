@@ -41,6 +41,7 @@ public final class InversedIndexer {
 
         }
 
+        // this part has to do the deciding
         cache.set(batch);
     }
 

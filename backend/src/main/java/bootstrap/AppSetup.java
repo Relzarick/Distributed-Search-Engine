@@ -1,21 +1,13 @@
 package bootstrap;
 
-import db.CacheClient;
 import db.Repository;
+import etl.CreateWorkersForTask;
 import etl.CsvParser;
 import indexer.InversedIndexer;
-import org.bson.Document;
-import timer.StopWatch;
+import logging.StopWatch;
 import tokenizer.StandardTokenizationV2;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public final class AppSetup {
     private AppSetup() {
@@ -25,75 +17,44 @@ public final class AppSetup {
      * Handles setup logic including, parsing, tokenizing and ingestion to mongo and redis.
      *
      */
-    public static void run(Repository db) throws AppSetupException {
+    public static void run(Repository db) {
         String pathName = "data";
-        File csv = checkDirIfValid(pathName);
 
         StopWatch timer = new StopWatch("parser");
-        try (CsvParser parser = new CsvParser(csv)) {
 
-            Iterator<List<Document>> docList = parser.returnTasks();
-            InversedIndexer indexer = new InversedIndexer(new CacheClient(), new StandardTokenizationV2());
-
-            createWorkersForTasks(docList, indexer, db);
+        try (CsvParser parser = new CsvParser(checkDirIfValid(pathName))) {
+            InversedIndexer indexer = new InversedIndexer(null, new StandardTokenizationV2());
+            CreateWorkersForTask.run(parser, indexer, db);
 
             timer.stop();
         } catch (Exception e) {
-            throw new AppSetupException(e.getMessage());
-        }
-
-    }
-
-    private static void createWorkersForTasks(Iterator<List<Document>> tasks, InversedIndexer indexer, Repository db) {
-        try (ExecutorService worker = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<?>> futures = new ArrayList<>();
-
-            while (tasks.hasNext()) {
-                List<Document> batch = tasks.next();
-
-                futures.add(worker.submit(() -> {
-                    db.insert(batch);
-                    indexer.tokenizeToIndex(batch);
-                }));
-            }
-
-            for (Future<?> future : futures) {
-                future.get();
-            }
-
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
+            timer.stopOnFailure();
+            throw new RuntimeException(e.getMessage(), e);
         }
 
     }
 
     /**
-     * Should only provide ONE .csv file under specified folder
+     * Should only provide ONE .csv file under specified folder.
      *
      * @param path should be the data folder under backend directory but could be any folder specified.
      * @return a File only if a valid .csv was found in provided path.
-     * @throws AppSetupException is a generic exception for the boot strap method.
+     * @throws RuntimeException if rules were not followed
      */
-    private static File checkDirIfValid(String path) throws AppSetupException {
+    private static File checkDirIfValid(String path) {
         File dir = new File(path);
         File[] csv = dir.listFiles((_, file) -> file.endsWith(".csv"));
 
         if (csv == null)
-            throw new AppSetupException(path + " dir was not found");
-
-        if (csv.length == 0)
-            throw new AppSetupException("No .csv file found in " + path);
+            throw new RuntimeException(path + " dir was not found");
 
         if (csv.length > 1)
-            throw new AppSetupException("Only accepts ONE .csv file " + path);
+            throw new RuntimeException("Only accepts ONE .csv file " + path);
+
+        if (csv.length == 0)
+            throw new RuntimeException("No .csv file found in " + path);
 
         return csv[0];
-    }
-
-    public static class AppSetupException extends Exception {
-        private AppSetupException(String message) {
-            super(message);
-        }
     }
 
 }

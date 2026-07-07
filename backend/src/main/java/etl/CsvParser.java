@@ -1,68 +1,68 @@
 package etl;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.NamedCsvRecord;
 import org.bson.Document;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 
 public final class CsvParser implements AutoCloseable {
+    private final CsvReader<NamedCsvRecord> parser;
 
-    CSVParser records;
+    public static final List<Document> POISON_PILL = Collections.emptyList();
 
-    /**
-     * Ingests .csv files and parses it for database
-     */
     public CsvParser(File file) throws IOException {
-        CSVFormat format = CSVFormat.EXCEL.builder()
-                .setHeader()
-                .setSkipHeaderRecord(true)
-                .setIgnoreHeaderCase(true)
-                .get();
-
-        records = CSVParser.parse(file, StandardCharsets.UTF_8, format);
+        parser = CsvReader.builder().ofNamedCsvRecord(file.toPath());
     }
 
-    public Iterator<List<Document>> returnTasks() throws IOException {
-        String[] headerNames = records.getHeaderNames().toArray(new String[0]);
+    public void parseDataTo(BlockingQueue<List<Document>> queue) throws InterruptedException {
+        Iterator<NamedCsvRecord> records = parser.iterator();
 
-        return new BatchIterator(headerNames, records.iterator());
+        if (!records.hasNext()) {
+            queue.put(POISON_PILL);
+            System.out.println("Empty CSV");
+            return;
+        }
+
+        NamedCsvRecord firstRecord = records.next();
+        String[] headers = firstRecord.getHeader().toArray(new String[0]);
+
+        List<Document> batch = new ArrayList<>();
+        batch.add(toDocument(firstRecord, headers));
+
+        while (records.hasNext()) {
+            batch.add(toDocument(records.next(), headers));
+
+            if (batch.size() == 5000) {
+                queue.put(batch);
+                batch = new ArrayList<>();
+            }
+        }
+
+        if (!batch.isEmpty())
+            queue.put(batch);
+
+        queue.put(POISON_PILL);
+    }
+
+    private Document toDocument(NamedCsvRecord record, String[] headers) {
+        Document doc = new Document();
+
+        for (String header : headers)
+            doc.append(header, TypeConverter.convert(record.getField(header)));
+
+        return doc;
     }
 
     @Override
     public void close() throws Exception {
-
-    }
-
-    private record BatchIterator(String[] headers, Iterator<CSVRecord> records) implements Iterator<List<Document>> {
-
-        @Override
-        public boolean hasNext() {
-            return records.hasNext();
-        }
-
-        @Override
-        public List<Document> next() {
-            List<Document> batch = new ArrayList<>();
-
-            while (batch.size() < 5000 && records.hasNext()) {
-                CSVRecord record = records.next();
-                Document doc = new Document();
-
-                for (String header : headers)
-                    doc.append(header, TypeConverter.convert(record.get(header)));
-
-                batch.add(doc);
-            }
-
-            return batch;
-        }
+        parser.close();
     }
 
 }

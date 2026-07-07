@@ -20,10 +20,9 @@ void main() {
 
         IO.println("Server is running on http://localhost:8080");
 
-    } catch (AppSetup.AppSetupException e) {
-        IO.println(e.getMessage());
-    } catch (IOException e) {
-        IO.println("IO Error can't start the server: " + e.getMessage());
+    } catch (RuntimeException | IOException e) {
+        System.err.println("IO Error can't start the server");
+        e.printStackTrace();
     }
 
     // close db when jvm exits

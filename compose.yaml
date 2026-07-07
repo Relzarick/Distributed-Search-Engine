@@ -12,7 +12,7 @@ services:
   #      - backend
 
   backend:
-    container_name: maggot
+    container_name: scum
     build:
       context: ./backend
       dockerfile: Dockerfile.server
@@ -26,12 +26,27 @@ services:
   db:
     container_name: mongrel
     image: mongo:8.3
+    init: true
     logging:
       driver: "none"
     ports:
       - "27017:27017"
     volumes:
       - mongrel_data:/data/db
+
+#  redis1:
+#    container_name: vermin
+#    image:
+#    ports:
+#      - ""
+#    volumes:
+#      - ""
+#
+#  redis2:
+#    container_name: rat
+#
+#  redis3:
+#    container_name: maggot
 
 volumes:
   mongrel_data:
