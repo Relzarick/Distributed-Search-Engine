@@ -28,7 +28,7 @@ public final class TypeConverter {
     }
 
     private static boolean isInt(String str) {
-        int start = checkStart(str);
+        int start = determineIndex(str);
 
         if (start == -1)
             return false;
@@ -42,7 +42,7 @@ public final class TypeConverter {
     }
 
     private static boolean isDouble(String str) {
-        int start = checkStart(str);
+        int start = determineIndex(str);
 
         if (start == -1)
             return false;
@@ -53,22 +53,21 @@ public final class TypeConverter {
         for (int i = start; i < str.length(); i++) {
             char c = str.charAt(i);
 
-            if (Character.isDigit(c)) {
+            if (Character.isDigit(c))
                 hasDigit = true;
-            } else if (c == '.') {
+            else if (c == '.')
                 dotCount++;
-            } else {
+            else
                 return false;
-            }
         }
 
         if (dotCount == 0 || !hasDigit)
             return false;
 
-        return dotCount <= 1;
+        return dotCount == 1;
     }
 
-    private static int checkStart(String str) {
+    private static int determineIndex(String str) {
         if (str.charAt(0) == '-') {
             if (str.length() == 1)
                 return -1;

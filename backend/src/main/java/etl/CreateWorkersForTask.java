@@ -15,7 +15,7 @@ import java.util.concurrent.*;
  */
 public final class CreateWorkersForTask {
     public static void run(CsvParser parser, InversedIndexer indexer, Repository db) throws InterruptedException {
-        BlockingQueue<List<Document>> taskQueue = new LinkedBlockingQueue<>(100);
+        BlockingQueue<List<Document>> taskQueue = new ArrayBlockingQueue<>(150);
 
         //noinspection resource
         ExecutorService producer = Executors.newSingleThreadExecutor();
@@ -26,15 +26,14 @@ public final class CreateWorkersForTask {
 
         producer.shutdown();
 
-        try (ExecutorService worker = Executors.newVirtualThreadPerTaskExecutor()) {
-
+        try (ExecutorService service = Executors.newFixedThreadPool(12)) {
             List<Future<?>> futures = new ArrayList<>();
             List<Document> batch;
 
             while ((batch = taskQueue.take()) != CsvParser.POISON_PILL) {
                 List<Document> finalBatch = batch;
 
-                futures.add(worker.submit(() -> {
+                futures.add(service.submit(() -> {
                             db.insert(finalBatch);
 //                            indexer.tokenizeToIndex(finalBatch);
                         })
@@ -43,9 +42,6 @@ public final class CreateWorkersForTask {
 
             for (Future<?> future : futures)
                 checkWorkerFutures(future);
-
-        } catch (InterruptedException | RuntimeException e) {
-            throw new RuntimeException(e);
         }
 
         try { // This should crash if it can't parse

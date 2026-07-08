@@ -27,6 +27,7 @@ public final class CsvParser implements AutoCloseable {
         if (!records.hasNext()) {
             queue.put(POISON_PILL);
             System.out.println("Empty CSV");
+
             return;
         }
 

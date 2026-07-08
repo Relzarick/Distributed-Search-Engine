@@ -26,9 +26,7 @@ public final class Database implements Repository {
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(CONNECTION_STRING)
                 .applyToConnectionPoolSettings(builder -> builder
-                        .maxSize(200)
-                        .minSize(50)
-                        .maxConnecting(10)
+                        .minSize(1)
                         .maxWaitTime(3, TimeUnit.SECONDS)
                 )
                 .build();
