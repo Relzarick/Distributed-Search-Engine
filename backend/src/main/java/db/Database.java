@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class Database implements Repository {
     private final MongoClient client;
-    private final MongoDatabase db;
+    private final MongoCollection<Document> collection;
 
     private static final ConnectionString CONNECTION_STRING = new ConnectionString("mongodb://mongrel:27017");
     private static final InsertManyOptions UNORDERED = new InsertManyOptions().ordered(false);
@@ -25,42 +25,38 @@ public final class Database implements Repository {
     public Database() {
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(CONNECTION_STRING)
-                .applyToConnectionPoolSettings(builder -> builder
+                .applyToConnectionPoolSettings(b -> b
                         .minSize(1)
                         .maxWaitTime(3, TimeUnit.SECONDS)
                 )
                 .build();
 
         client = MongoClients.create(settings);
-        db = client.getDatabase(DATABASENAME);
+
+        MongoDatabase db = client.getDatabase(DATABASENAME);
+        collection = db.getCollection(COLLECTION);
     }
 
     @Override
     public Document fetch(String id) {
-        MongoCollection<Document> col = docCollection();
-        return col.find(Filters.eq("_id", id)).first();
-        // should make this fetch a bunch at once
+        return collection.find(Filters.eq("_id", id)).first();
+//         should make this fetch a bunch at once?
     }
 
     @Override
     public void insert(List<Document> batch) {
-        MongoCollection<Document> col = docCollection();
-        col.insertMany(batch, UNORDERED);
+        collection.insertMany(batch, UNORDERED);
     }
 
     @Override
     public Boolean ifExists() {
-        MongoCollection<Document> col = docCollection();
-        return col.find().first() != null;
+        return collection.find().first() != null;
     }
 
     @Override
     public void close() {
-        if (client != null) client.close();
-    }
-
-    private MongoCollection<Document> docCollection() {
-        return db.getCollection(COLLECTION);
+        if (client != null)
+            client.close();
     }
 
 }

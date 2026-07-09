@@ -5,9 +5,14 @@ import java.time.Duration;
 public class StopWatch {
     private final long startNanos;
 
+    /**
+     * This will print: "Timer started for "
+     *
+     * @param id
+     */
     public StopWatch(String id) {
         startNanos = System.nanoTime();
-        System.out.println("Timer started in " + id);
+        System.out.println("Timer started for " + id);
     }
 
     public void stop() {
@@ -35,5 +40,5 @@ public class StopWatch {
         else
             System.out.printf("%s%dns%n", label, nanos);
     }
-    
+
 }
