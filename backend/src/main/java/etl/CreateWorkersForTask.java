@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class CreateWorkersForTask {
     public static void run(CsvParser parser, InversedIndexer indexer, Repository db) throws InterruptedException, ExecutionException {
-        BlockingQueue<List<Document>> tasks = new ArrayBlockingQueue<>(150);
+        BlockingQueue<List<Document>> tasks = new ArrayBlockingQueue<>(100);
         AtomicReference<Exception> errors = new AtomicReference<>();
 
         Future<?> err = runProducers(parser, errors, tasks);

@@ -20,8 +20,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./backend/data:/app/data
       - ./backend/src/main/resources/config.properties:/app/config.properties
+      - ./backend/data/ingest:/app/bind
+      - csv-data:/app/data
     depends_on:
       - db
 
@@ -51,3 +52,4 @@ services:
 
 volumes:
   mongrel_data:
+  csv-data:

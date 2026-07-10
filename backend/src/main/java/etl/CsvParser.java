@@ -6,14 +6,13 @@ import de.siegmar.fastcsv.reader.IndexedCsvReader;
 import logging.StopWatch;
 import org.bson.Document;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public final class CsvParser {
-    private final Path filePath;
+    private final Path path;
 
     private final CsvIndex index;
     private final int totalPages;
@@ -22,11 +21,11 @@ public final class CsvParser {
     private static final int CAPACITY = 5000;
     public static final List<Document> POISON_PILL = Collections.emptyList();
 
-    public CsvParser(File file) throws IOException {
-        filePath = file.toPath();
+    public CsvParser(Path filePath) throws IOException {
+        path = filePath;
 
         StopWatch timer = new StopWatch("csv indexing");
-        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(filePath)) {
+        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(path)) {
             index = reader.getIndex();
             totalPages = index.pages().size();
             timer.stop();
@@ -40,7 +39,7 @@ public final class CsvParser {
      * @throws NoSuchElementException Crashes app if CSV is empty.
      */
     private void getHeaders() throws NoSuchElementException {
-        try (IndexedCsvReader<CsvRecord> r = IndexedCsvReader.builder().index(index).ofCsvRecord(filePath)) {
+        try (IndexedCsvReader<CsvRecord> r = IndexedCsvReader.builder().index(index).ofCsvRecord(path)) {
             List<CsvRecord> firstPage = r.readPage(0);
 
             CsvRecord headersRecords = firstPage.getFirst();
@@ -69,7 +68,7 @@ public final class CsvParser {
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder()
                 .index(index)
                 .pageSize(CAPACITY)
-                .ofCsvRecord(filePath)) {
+                .ofCsvRecord(path)) {
             List<Document> batch = new ArrayList<>(CAPACITY); // A batch is a list of csv rows
 
             for (int i = start; i < end; i++) { // Page loop

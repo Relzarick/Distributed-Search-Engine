@@ -4,23 +4,24 @@ import java.time.Duration;
 
 public class StopWatch {
     private final long startNanos;
+    private final String id;
 
     /**
      * This will print: "Timer started for "
-     *
-     * @param id
      */
-    public StopWatch(String id) {
+    public StopWatch(String name) {
         startNanos = System.nanoTime();
+        id = name;
+
         System.out.println("Timer started for " + id);
     }
 
     public void stop() {
-        printElapsed("Time elapsed: ");
+        printElapsed(id + " time elapsed: ");
     }
 
     public void stopOnFailure() {
-        printElapsed("Failed after: ");
+        printElapsed(id + " failed after: ");
     }
 
     private void printElapsed(String label) {
