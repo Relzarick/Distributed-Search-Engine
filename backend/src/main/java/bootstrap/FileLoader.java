@@ -6,6 +6,8 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,6 +31,20 @@ public class FileLoader {
     public static Path stageCsv() throws IOException {
         Path source = getSource();
         Path target = Paths.get("/app/data/file.csv");
+
+        if (Files.exists(target)) {
+            BasicFileAttributes sourceAttrs = Files.readAttributes(source, BasicFileAttributes.class);
+            BasicFileAttributes targetAttrs = Files.readAttributes(target, BasicFileAttributes.class);
+
+            long sourceSize = sourceAttrs.size();
+            long targetSize = targetAttrs.size();
+
+            FileTime sourceLMT = sourceAttrs.lastModifiedTime();
+            FileTime targetLMT = targetAttrs.lastModifiedTime();
+
+            if (targetSize == sourceSize && targetLMT.equals(sourceLMT))
+                return target;
+        }
 
         long size = Files.size(source);
 
@@ -66,6 +82,8 @@ public class FileLoader {
             }
 
         }
+
+        Files.setLastModifiedTime(target, Files.getLastModifiedTime(source));
 
         return target;
     }

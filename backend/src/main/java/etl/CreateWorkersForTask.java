@@ -7,76 +7,63 @@ import db.Repository;
 import indexer.InversedIndexer;
 import org.bson.Document;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Used to insert parsed data into the databases
  */
 public final class CreateWorkersForTask {
+    private static int consumerTc;
+
     public static void run(CsvParser parser, InversedIndexer indexer, Repository db) throws InterruptedException, ExecutionException {
         BlockingQueue<List<Document>> tasks = new ArrayBlockingQueue<>(100);
-        AtomicReference<Exception> errors = new AtomicReference<>();
+        consumerTc = ConfigLoader.getInt("consumer.threadCount", "4");
 
-        Future<?> err = runProducers(parser, errors, tasks);
+        Future<?> error = runProducers(parser, tasks);
         runConsumers(tasks, db);
 
-        err.get();
-
-        if (errors.get() != null)
-            throw new RuntimeException(errors.get());
+        error.get();
     }
 
-    private static Future<?> runProducers(CsvParser parser, AtomicReference<Exception> errors, BlockingQueue<List<Document>> tasks) {
-        int tc = ConfigLoader.getInt("consumer.threadCount", "2");
+    private static Future<?> runProducers(CsvParser parser, BlockingQueue<List<Document>> tasks) {
+        int tc = ConfigLoader.getInt("producer.threadCount", "2");
 
-        //noinspection resource
         ExecutorService producer = Executors.newFixedThreadPool(tc);
-        List<Future<Void>> pFutures = new ArrayList<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
 
         for (int i = 0; i < tc; i++) {
             int[] range = parser.getPageRange(i, tc);
 
-            pFutures.add(producer.submit(() -> {
-                        parser.parseDataTo(tasks, range[0], range[1]);
-                        return null;
-                    })
-            );
+            futures.add(CompletableFuture.runAsync(() -> {
+                try {
+                    parser.parseDataTo(tasks, range[0], range[1]);
+                } catch (InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, producer));
+
         }
 
-        //noinspection resource
-        ExecutorService service = Executors.newSingleThreadExecutor();
-
-        Future<?> err = service.submit(() -> {
-            for (Future<?> future : pFutures) {
-                try {
-                    future.get();
-                } catch (ExecutionException | InterruptedException e) {
-                    errors.set(e);
-                    break;
-                }
-            }
-
-            try {
-                tasks.put(CsvParser.POISON_PILL);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-        });
+        CompletableFuture<Void> done = CompletableFuture
+                .allOf(futures.toArray(new CompletableFuture[0]))
+                .whenComplete((result, throwable) -> {
+                    try {
+                        for (int i = 0; i < consumerTc; i++)
+                            tasks.put(CsvParser.POISON_PILL);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
 
         producer.shutdown();
-        service.shutdown();
-
-        return err;
+        return done;
     }
 
     private static void runConsumers(BlockingQueue<List<Document>> queue, Repository db) throws InterruptedException {
-        int tc = ConfigLoader.getInt("consumer.threadCount", "4");
-
-        try (ExecutorService consumer = Executors.newFixedThreadPool(tc)) {
+        try (ExecutorService consumer = Executors.newFixedThreadPool(consumerTc)) {
             List<Future<?>> cFutures = new ArrayList<>();
             List<Document> batch;
 

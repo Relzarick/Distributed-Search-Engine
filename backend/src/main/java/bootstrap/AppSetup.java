@@ -19,7 +19,6 @@ public final class AppSetup {
      *
      */
     public static void run(Repository db) throws IOException {
-        StopWatch total = new StopWatch("Total time");
         Path path = FileLoader.stageCsv();
 
         StopWatch parse = new StopWatch("Parsing pipeline");
@@ -36,7 +35,6 @@ public final class AppSetup {
             throw new RuntimeException(e.getMessage(), e);
         }
 
-        total.stop();
     }
 
 }

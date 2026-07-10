@@ -3,7 +3,6 @@ package etl;
 import de.siegmar.fastcsv.reader.CsvIndex;
 import de.siegmar.fastcsv.reader.CsvRecord;
 import de.siegmar.fastcsv.reader.IndexedCsvReader;
-import logging.StopWatch;
 import org.bson.Document;
 
 import java.io.IOException;
@@ -24,11 +23,9 @@ public final class CsvParser {
     public CsvParser(Path filePath) throws IOException {
         path = filePath;
 
-        StopWatch timer = new StopWatch("csv indexing");
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(path)) {
             index = reader.getIndex();
             totalPages = index.pages().size();
-            timer.stop();
 
             getHeaders();
         }

@@ -41,5 +41,4 @@ public final class CacheClient implements Cache {
         client.shutdown();
     }
 
-    // this is coupled to mongo now
 }
