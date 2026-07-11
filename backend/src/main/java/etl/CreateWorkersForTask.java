@@ -19,8 +19,8 @@ public final class CreateWorkersForTask {
     private static int consumerTc;
 
     public static void run(CsvParser parser, InversedIndexer indexer, Repository db) throws InterruptedException, ExecutionException {
-        BlockingQueue<List<Document>> tasks = new ArrayBlockingQueue<>(100);
-        consumerTc = ConfigLoader.getInt("consumer.threadCount", "4");
+        BlockingQueue<List<Document>> tasks = new ArrayBlockingQueue<>(150);
+        consumerTc = ConfigLoader.getInt("consumer.threadCount", "6");
 
         Future<?> error = runProducers(parser, tasks);
         runConsumers(tasks, db);
@@ -40,7 +40,7 @@ public final class CreateWorkersForTask {
             futures.add(CompletableFuture.runAsync(() -> {
                 try {
                     parser.parseDataTo(tasks, range[0], range[1]);
-                } catch (InterruptedException | IOException e) {
+                } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }, producer));

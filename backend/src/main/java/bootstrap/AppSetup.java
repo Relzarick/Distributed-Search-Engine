@@ -19,7 +19,11 @@ public final class AppSetup {
      *
      */
     public static void run(Repository db) throws IOException {
+        StopWatch total = new StopWatch("total pipeline");
+
+        StopWatch stage = new StopWatch("Staging");
         Path path = FileLoader.stageCsv();
+        stage.stop();
 
         StopWatch parse = new StopWatch("Parsing pipeline");
 
@@ -34,6 +38,8 @@ public final class AppSetup {
             parse.stopOnFailure();
             throw new RuntimeException(e.getMessage(), e);
         }
+
+        total.stop();
 
     }
 

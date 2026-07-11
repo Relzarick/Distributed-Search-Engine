@@ -12,8 +12,6 @@ public class StopWatch {
     public StopWatch(String name) {
         startNanos = System.nanoTime();
         id = name;
-
-        System.out.println("Timer started for " + id);
     }
 
     public void stop() {

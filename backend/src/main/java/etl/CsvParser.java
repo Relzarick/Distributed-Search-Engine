@@ -23,6 +23,7 @@ public final class CsvParser {
     public CsvParser(Path filePath) throws IOException {
         path = filePath;
 
+//        StopWatch t = new StopWatch("Index");
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(path)) {
             index = reader.getIndex();
             totalPages = index.pages().size();
@@ -30,6 +31,7 @@ public final class CsvParser {
             getHeaders();
         }
 
+//        t.stop();
     }
 
     /**
@@ -39,8 +41,7 @@ public final class CsvParser {
         try (IndexedCsvReader<CsvRecord> r = IndexedCsvReader.builder().index(index).ofCsvRecord(path)) {
             List<CsvRecord> firstPage = r.readPage(0);
 
-            CsvRecord headersRecords = firstPage.getFirst();
-            headers = headersRecords.getFields().toArray(new String[0]);
+            headers = firstPage.getFirst().getFields().toArray(new String[0]);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
