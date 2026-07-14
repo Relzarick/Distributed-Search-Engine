@@ -22,9 +22,10 @@ services:
     volumes:
       - ./backend/src/main/resources/config.properties:/app/config.properties
       - ./backend/data/ingest:/app/bind
-      - csv-data:/app/data
+      - csv_data:/app/data
     depends_on:
       - db
+      - redis1
 
   db:
     container_name: mongrel
@@ -34,22 +35,35 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongrel_data:/data/db
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
 
-#  redis1:
-#    container_name: vermin
-#    image:
-#    ports:
-#      - ""
-#    volumes:
-#      - ""
-#
+  redis1:
+    container_name: vermin
+    image: redis:8.8-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data1:/data
+
 #  redis2:
 #    container_name: rat
+#    image: redis:8.8-alpine
+#    ports:
+#      - "6380:6379"
+#    volumes:
+#      - redis_data2:/data
 #
 #  redis3:
 #    container_name: maggot
+#    image: redis:8.8-alpine
+#    ports:
+#      - "6381:6379"
+#    volumes:
+#      - redis_data3:/data
 
 volumes:
-  mongrel_data:
-  csv-data:
+  csv_data:
+  mongo_data:
+  mongo_config:
+  redis_data1:

@@ -3,7 +3,6 @@ package tokenizer;
 import java.util.Set;
 
 public class BaseTokenization {
-    // region Stop Words
     protected static final Set<String> STOP_WORDS = Set.of(
             // Articles
             "a", "an", "the",
@@ -106,6 +105,5 @@ public class BaseTokenization {
             "that'll", "that've", "there'd", "there'll", "there're", "there've",
             "'tis", "'twas", "would've"
     );
-    // endregion
 
 }

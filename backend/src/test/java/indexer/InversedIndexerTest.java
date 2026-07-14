@@ -1,6 +1,6 @@
 package indexer;
 
-import db.Cache;
+import db.Index;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +15,7 @@ class InversedIndexerTest {
     private InversedIndexer indexer;
 
     @Mock
-    Cache cache;
+    Index cache;
 
     @BeforeEach
     void setUp() {

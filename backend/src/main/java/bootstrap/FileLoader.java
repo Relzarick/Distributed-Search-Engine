@@ -3,11 +3,13 @@ package bootstrap;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -16,8 +18,8 @@ public class FileLoader {
      * The following settings were what I tested to be fastest for my setup, adjust accordingly.
      */
     private static final String PATH_NAME = "/app/bind";
-    private static final int BUFFER_SIZE = 8 * 1024 * 1024;
-    private static final int THREAD_COUNT = 4;
+    private static final int BUFFER_SIZE = 4 * 1024 * 1024;
+    private static final int THREAD_COUNT = 8;
 
     private FileLoader() {
     }
@@ -36,13 +38,8 @@ public class FileLoader {
             BasicFileAttributes sourceAttrs = Files.readAttributes(source, BasicFileAttributes.class);
             BasicFileAttributes targetAttrs = Files.readAttributes(target, BasicFileAttributes.class);
 
-            long sourceSize = sourceAttrs.size();
-            long targetSize = targetAttrs.size();
-
-            FileTime sourceLMT = sourceAttrs.lastModifiedTime();
-            FileTime targetLMT = targetAttrs.lastModifiedTime();
-
-            if (targetSize == sourceSize && targetLMT.equals(sourceLMT))
+            if (targetAttrs.size() == sourceAttrs.size() &&
+                    targetAttrs.lastModifiedTime().equals(sourceAttrs.lastModifiedTime()))
                 return target;
         }
 
@@ -57,30 +54,40 @@ public class FileLoader {
                 long[] range = copyWithRange(i, size);
 
                 service.submit(() -> {
-                    try (RandomAccessFile in = new RandomAccessFile(source.toFile(), "r");
-                         RandomAccessFile out = new RandomAccessFile(target.toFile(), "rw")) {
+                    try (FileChannel in = FileChannel.open(source, StandardOpenOption.READ);
+                         FileChannel out = FileChannel.open(target, StandardOpenOption.WRITE)) {
 
+                        ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+                        int capacity = buffer.capacity();
                         long remaining = range[1] - range[0];
-                        byte[] buffer = new byte[BUFFER_SIZE];
 
-                        in.seek(range[0]);
-                        out.seek(range[0]);
+                        in.position(range[0]);
+                        out.position(range[0]);
 
                         while (remaining > 0) {
-                            int toRead = (int) Math.min(buffer.length, remaining);
-                            int bytesRead = in.read(buffer, 0, toRead);
-                            out.write(buffer, 0, bytesRead);
+                            buffer.clear();
 
+                            if (remaining < capacity)
+                                buffer.limit((int) remaining);
+
+                            int bytesRead = in.read(buffer);
+
+                            if (bytesRead == -1)
+                                break;
+
+                            buffer.flip();
+                            out.write(buffer);
                             remaining -= bytesRead;
                         }
 
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        throw new RuntimeException("Thread failed during copy", e);
                     }
                 });
 
             }
 
+            service.shutdown();
         }
 
         Files.setLastModifiedTime(target, Files.getLastModifiedTime(source));
@@ -105,7 +112,7 @@ public class FileLoader {
      */
     private static Path getSource() {
         File dir = new File(PATH_NAME);
-        File[] csv = dir.listFiles((_, file) -> file.endsWith(".csv"));
+        File[] csv = dir.listFiles((f, file) -> file.endsWith(".csv"));
 
         if (csv == null)
             throw new RuntimeException(PATH_NAME + " dir was not found");

@@ -1,48 +1,55 @@
 package indexer;
 
-import db.Cache;
+import db.Index;
 import org.bson.Document;
 import tokenizer.TokenStrategy;
 import tokenizer.Tokenizer;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public final class InversedIndexer {
-    private final Cache cache;
+public final class InversedIndexer implements AutoCloseable {
+    private final Index redis;
     private final Tokenizer tk;
 
-    public InversedIndexer(Cache redisClient, TokenStrategy tokenizer) {
-        cache = redisClient;
-        tk = new Tokenizer(tokenizer);
+    public InversedIndexer(Index redisClient, TokenStrategy strategy) {
+        redis = redisClient;
+        tk = new Tokenizer(strategy);
     }
 
     public void tokenizeToIndex(List<Document> batch) {
+        Map<String, Set<String>> dict = new HashMap<>(1000);
+
         for (Document doc : batch) {
-            Iterator<Map.Entry<String, Object>> iterator = doc.entrySet().iterator();
+            String id = doc.getObjectId("_id").toHexString();
 
-            while (iterator.hasNext()) {
-                Map.Entry<String, Object> field = iterator.next();
-
-                if ("_id".equals(field.getKey()))
+            for (Map.Entry<String, Object> field : doc.entrySet()) {
+                if (field.getKey().equals("_id"))
                     continue;
 
                 if (field.getValue() instanceof String value) {
                     List<String> tokens = tk.tokenize(value);
 
-                    if (tokens == null)
-                        iterator.remove();
-                    else
-                        field.setValue(tokens);
-                } else
-                    iterator.remove();
+                    if (tokens != null)
+                        for (String key : tokens)
+                            dict.computeIfAbsent(key, k -> new HashSet<>()).add(id);
+                }
             }
-
         }
 
-        // this part has to do the deciding
-        cache.set(batch);
+        if (!dict.isEmpty())
+            pushAndFlush(dict);
+    }
+
+    private void pushAndFlush(Map<String, Set<String>> dict) {
+        for (Map.Entry<String, Set<String>> entry : dict.entrySet())
+            redis.set(entry.getKey(), entry.getValue().toArray(new String[0]));
+
+        redis.flush();
+    }
+
+    @Override
+    public void close() {
+        redis.close();
     }
 
 }

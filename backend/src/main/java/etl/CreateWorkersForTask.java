@@ -1,14 +1,13 @@
 package etl;
 
 import bootstrap.ConfigLoader;
-import com.mongodb.MongoBulkWriteException;
-import com.mongodb.bulk.BulkWriteError;
+import db.RedisClient;
 import db.Repository;
 import indexer.InversedIndexer;
 import org.bson.Document;
+import tokenizer.TokenStrategy;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -16,89 +15,83 @@ import java.util.concurrent.*;
  * Used to insert parsed data into the databases
  */
 public final class CreateWorkersForTask {
-    private static int consumerTc;
+    public static void run(CsvParser parser, Repository db, TokenStrategy strat) throws InterruptedException, ExecutionException {
+        int consumerTc = ConfigLoader.getInt("consumer.threadCount", "6");
+        int producerTc = ConfigLoader.getInt("producer.threadCount", "2");
 
-    public static void run(CsvParser parser, InversedIndexer indexer, Repository db) throws InterruptedException, ExecutionException {
-        BlockingQueue<List<Document>> tasks = new ArrayBlockingQueue<>(150);
-        consumerTc = ConfigLoader.getInt("consumer.threadCount", "6");
+        BlockingQueue<List<Document>> tasks = new LinkedBlockingQueue<>(50);
 
-        Future<?> error = runProducers(parser, tasks);
-        runConsumers(tasks, db);
+        CompletableFuture<Void> producers = runProducers(parser, tasks, producerTc, consumerTc);
+        CompletableFuture<Void> consumers = runConsumers(tasks, db, strat, consumerTc);
 
-        error.get();
+        CompletableFuture.allOf(producers, consumers).get();
     }
 
-    private static Future<?> runProducers(CsvParser parser, BlockingQueue<List<Document>> tasks) {
-        int tc = ConfigLoader.getInt("producer.threadCount", "2");
+    private static CompletableFuture<Void> runProducers(CsvParser parser, BlockingQueue<List<Document>> tasks, int pTc, int cTc) {
+        ExecutorService threadPool = Executors.newFixedThreadPool(pTc);
+        CompletableFuture<?>[] futures = new CompletableFuture<?>[pTc];
 
-        ExecutorService producer = Executors.newFixedThreadPool(tc);
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (int i = 0; i < pTc; i++) {
+            final int index = i;
 
-        for (int i = 0; i < tc; i++) {
-            int[] range = parser.getPageRange(i, tc);
-
-            futures.add(CompletableFuture.runAsync(() -> {
+            futures[i] = CompletableFuture.runAsync(() -> {
                 try {
+                    int[] range = parser.getPageRange(index, pTc);
                     parser.parseDataTo(tasks, range[0], range[1]);
                 } catch (IOException | InterruptedException e) {
-                    throw new RuntimeException(e);
+                    throw new CompletionException(e);
                 }
-            }, producer));
-
+            }, threadPool);
         }
 
-        CompletableFuture<Void> done = CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[0]))
-                .whenComplete((result, throwable) -> {
-                    try {
-                        for (int i = 0; i < consumerTc; i++)
-                            tasks.put(CsvParser.POISON_PILL);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                });
-
-        producer.shutdown();
-        return done;
-    }
-
-    private static void runConsumers(BlockingQueue<List<Document>> queue, Repository db) throws InterruptedException {
-        try (ExecutorService consumer = Executors.newFixedThreadPool(consumerTc)) {
-            List<Future<?>> cFutures = new ArrayList<>();
-            List<Document> batch;
-
-            while ((batch = queue.take()) != CsvParser.POISON_PILL) {
-                List<Document> finalBatch = batch;
-
-                cFutures.add(consumer.submit(() -> {
-                            db.insert(finalBatch);
-//                            indexer.tokenizeToIndex(finalBatch);
-                        })
-                );
-            }
-
-            checkForBulkWriteEx(cFutures);
-        }
-    }
-
-    private static void checkForBulkWriteEx(List<Future<?>> list) {
-        for (Future<?> future : list) {
+        return CompletableFuture.allOf(futures).whenComplete((result, throwable) -> {
             try {
-                future.get();
-            } catch (Exception e) {
-                Throwable cause = e.getCause();
-
-                if (cause instanceof MongoBulkWriteException bulkEx) {
-                    for (BulkWriteError err : bulkEx.getWriteErrors())
-                        System.err.println("Index " + err.getIndex() + ": " + err.getMessage());
-
-                    return;
-                }
-
-                throw new RuntimeException(cause);
+                for (int i = 0; i < cTc; i++)
+                    tasks.put(CsvParser.POISON_PILL);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                threadPool.shutdown();
             }
+        });
+
+    }
+
+    private static CompletableFuture<Void> runConsumers(BlockingQueue<List<Document>> queue, Repository db, TokenStrategy strat, int cTc) {
+        ExecutorService threadPool = Executors.newFixedThreadPool(cTc);
+        CompletableFuture<?>[] futures = new CompletableFuture<?>[cTc];
+
+        for (int i = 0; i < cTc; i++) {
+            futures[i] = CompletableFuture.runAsync(() -> {
+                try (InversedIndexer indexer = new InversedIndexer(new RedisClient(), strat)) {
+                    while (true) {
+                        List<Document> batch = queue.take();
+
+                        if (batch == CsvParser.POISON_PILL)
+                            break;
+
+                        try {
+                            db.insert(batch);
+                            indexer.tokenizeToIndex(batch);
+                        } catch (Exception e) {
+                            System.err.println("Failed to process batch. Reason: " + e.getMessage());
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new CompletionException(e);
+                }
+            }, threadPool);
         }
 
+        // Create a new threadpool for redis
+
+        return CompletableFuture.allOf(futures).whenComplete((result, throwable) -> {
+            if (throwable != null)
+                threadPool.shutdownNow();
+            else
+                threadPool.shutdown();
+        });
     }
 
 }

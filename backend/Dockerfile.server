@@ -1,17 +1,27 @@
-FROM maven:3.9-eclipse-temurin-26-alpine AS build
+FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
 COPY pom.xml .
-RUN mvn dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp dependency:go-offline
 
-COPY . .
-RUN mvn package -Dmaven.test.skip=true
+COPY src ./src
+RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp package -Dmaven.test.skip=true
 
-FROM eclipse-temurin:26-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-COPY --from=build /app/target/Distributed-Search-Engine-1.1-SNAPSHOT.jar app.jar
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
+RUN mkdir data && chown appuser:appgroup data
+
+COPY --from=build --chown=appuser:appgroup /app/target/Distributed-Search-Engine-1.2-SNAPSHOT.jar app.jar
+
+USER appuser
 EXPOSE 8080
-CMD ["java", "-XX:MaxRAMPercentage=60.0", "-XX:ParallelGCThreads=6", "-jar", "app.jar"]
-#CMD ["java", "-XX:MaxRAMPercentage=60.0", "-XX:+UseG1GC", "-XX:ParallelGCThreads=6", "-XX:FlightRecorderOptions=stackdepth=128", "-XX:StartFlightRecording=filename=recording.jfr,duration=20s,settings=profile", "-jar", "app.jar"]
+ENTRYPOINT ["java"]
+
+CMD ["-XX:MaxRAMPercentage=70.0", "-XX:+UseZGC", "-jar", "app.jar"]
+#CMD ["-XX:MaxRAMPercentage=70.0", \
+#     "-XX:+UseZGC", \
+#     "-XX:StartFlightRecording=filename=/tmp/recording.jfr,duration=60s,settings=profile", \
+#     "-jar", "app.jar"]

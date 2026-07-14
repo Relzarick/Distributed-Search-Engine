@@ -1,6 +1,6 @@
 # Distributed Search Engine
 
-Simple engine.
+Search engine for csv documents.
 
 ---
 
@@ -32,11 +32,11 @@ does not support multiple datasets currently.
 
 ## How It Works
 
-The ingestion pipeline runs in three stages: staging, indexing, and parsing and insertion.
+The ingestion pipeline runs in three stages: steps, indexing, and parsing and insertion.
 
-### Stage One: Staging
+### Step One: Staging
 
-First, the program stages the CSV file into a Docker named volume from a mount.
+The program first stages the CSV file into a Docker named volume from a mount.
 The reason behind this, instead of just using the file directly from the mount,
 is to minimize the I/O overhead between Docker and the host OS.
 I also did not want to give the user an additional step of
@@ -45,14 +45,14 @@ This means the user can still easily replace the file without creating a new vol
 
 * This process averages around 1.5s, but saves ~10 seconds in total.
 
-### Stage Two: Indexing
+### Step Two: Indexing
 
 After staging the file onto the named volume,
 the program then indexes the entire document to prepare for multithreaded parsing.
 
 * It averages around 2.5s.
 
-### Stage Three: Parsing & Insertion
+### Step Three: Parsing & Insertion
 
 This is where the program parses through the files and inserts them into MongoDB.
 Using a producer and consumer pattern with a LinkedBlockingQueue,

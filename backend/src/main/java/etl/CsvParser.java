@@ -3,11 +3,15 @@ package etl;
 import de.siegmar.fastcsv.reader.CsvIndex;
 import de.siegmar.fastcsv.reader.CsvRecord;
 import de.siegmar.fastcsv.reader.IndexedCsvReader;
+import logging.StopWatch;
 import org.bson.Document;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 
 public final class CsvParser {
@@ -23,7 +27,7 @@ public final class CsvParser {
     public CsvParser(Path filePath) throws IOException {
         path = filePath;
 
-//        StopWatch t = new StopWatch("Index");
+        StopWatch timer = new StopWatch("Index");
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(path)) {
             index = reader.getIndex();
             totalPages = index.pages().size();
@@ -31,7 +35,7 @@ public final class CsvParser {
             getHeaders();
         }
 
-//        t.stop();
+        timer.stop();
     }
 
     /**
@@ -63,10 +67,7 @@ public final class CsvParser {
     }
 
     public void parseDataTo(BlockingQueue<List<Document>> queue, int start, int end) throws IOException, InterruptedException {
-        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder()
-                .index(index)
-                .pageSize(CAPACITY)
-                .ofCsvRecord(path)) {
+        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().index(index).pageSize(CAPACITY).ofCsvRecord(path)) {
             List<Document> batch = new ArrayList<>(CAPACITY); // A batch is a list of csv rows
 
             for (int i = start; i < end; i++) { // Page loop
@@ -78,7 +79,7 @@ public final class CsvParser {
 
                     if (batch.size() == CAPACITY) {
                         queue.put(batch);
-                        batch = new ArrayList<>();
+                        batch = new ArrayList<>(CAPACITY);
                     }
                 }
 
@@ -95,13 +96,12 @@ public final class CsvParser {
      * @return A Document for mongo.
      */
     private Document toDocument(CsvRecord records) {
-        Map<String, Object> fields = new LinkedHashMap<>(headers.length, 1);
+        Document doc = new Document();
 
-        for (int i = 0; i < headers.length; i++) {
-            fields.put(headers[i], TypeConverter.convert(records.getField(i)));
-        }
+        for (int i = 0; i < headers.length; i++)
+            doc.put(headers[i], TypeConverter.convert(records.getField(i)));
 
-        return new Document(fields);
+        return doc;
     }
 
 }

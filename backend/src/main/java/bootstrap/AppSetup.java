@@ -3,9 +3,8 @@ package bootstrap;
 import db.Repository;
 import etl.CreateWorkersForTask;
 import etl.CsvParser;
-import indexer.InversedIndexer;
 import logging.StopWatch;
-import tokenizer.StandardTokenizationV2;
+import tokenizer.StandardTokenizationV3;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -29,9 +28,7 @@ public final class AppSetup {
 
         try {
             CsvParser parser = new CsvParser(path);
-            InversedIndexer indexer = new InversedIndexer(null, new StandardTokenizationV2());
-
-            CreateWorkersForTask.run(parser, indexer, db);
+            CreateWorkersForTask.run(parser, db, new StandardTokenizationV3());
 
             parse.stop();
         } catch (Exception e) {

@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
 public class Server {
-    static void main() {
+    public static void main(String[] args) {
         Repository db = new Database();
 
         try {
@@ -21,12 +21,11 @@ public class Server {
 
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 
-            server.createContext("/", new baseHandler());
+            server.createContext("/", new BaseHandler());
             server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
             server.start();
 
-            IO.println("Server is running on http://localhost:8080");
-
+            System.out.println("Server is running on http://localhost:8080");
         } catch (RuntimeException | IOException e) {
             System.err.println("IO Error can't start the server");
             e.printStackTrace();
@@ -35,7 +34,7 @@ public class Server {
         // close db when jvm exits
     }
 
-    private static class baseHandler implements HttpHandler {
+    private static class BaseHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             byte[] bytes = "testing".getBytes(StandardCharsets.UTF_8);
