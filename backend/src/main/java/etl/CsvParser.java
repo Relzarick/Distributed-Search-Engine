@@ -1,5 +1,6 @@
 package etl;
 
+import bootstrap.FileLoader;
 import de.siegmar.fastcsv.reader.CsvIndex;
 import de.siegmar.fastcsv.reader.CsvRecord;
 import de.siegmar.fastcsv.reader.IndexedCsvReader;
@@ -15,7 +16,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 
 public final class CsvParser {
-    private final Path path;
+    private final static Path PATH = FileLoader.getSource();
 
     private final CsvIndex index;
     private final int totalPages;
@@ -24,11 +25,9 @@ public final class CsvParser {
     private static final int CAPACITY = 5000;
     public static final List<Document> POISON_PILL = Collections.emptyList();
 
-    public CsvParser(Path filePath) throws IOException {
-        path = filePath;
-
+    public CsvParser() throws IOException {
         StopWatch timer = new StopWatch("Index");
-        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(path)) {
+        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(PATH)) {
             index = reader.getIndex();
             totalPages = index.pages().size();
 
@@ -42,7 +41,7 @@ public final class CsvParser {
      * @throws NoSuchElementException Crashes app if CSV is empty.
      */
     private void getHeaders() throws NoSuchElementException {
-        try (IndexedCsvReader<CsvRecord> r = IndexedCsvReader.builder().index(index).ofCsvRecord(path)) {
+        try (IndexedCsvReader<CsvRecord> r = IndexedCsvReader.builder().index(index).ofCsvRecord(PATH)) {
             List<CsvRecord> firstPage = r.readPage(0);
 
             headers = firstPage.getFirst().getFields().toArray(new String[0]);
@@ -67,7 +66,7 @@ public final class CsvParser {
     }
 
     public void parseDataTo(BlockingQueue<List<Document>> queue, int start, int end) throws IOException, InterruptedException {
-        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().index(index).pageSize(CAPACITY).ofCsvRecord(path)) {
+        try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().index(index).pageSize(CAPACITY).ofCsvRecord(PATH)) {
             List<Document> batch = new ArrayList<>(CAPACITY); // A batch is a list of csv rows
 
             for (int i = start; i < end; i++) { // Page loop

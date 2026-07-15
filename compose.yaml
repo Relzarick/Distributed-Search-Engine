@@ -21,8 +21,7 @@ services:
       - "8080:8080"
     volumes:
       - ./backend/src/main/resources/config.properties:/app/config.properties
-      - ./backend/data/ingest:/app/bind
-      - csv_data:/app/data
+      - ./backend/data:/app/data
     depends_on:
       - db
       - redis1
@@ -63,7 +62,6 @@ services:
 #      - redis_data3:/data
 
 volumes:
-  csv_data:
   mongo_data:
   mongo_config:
   redis_data1:

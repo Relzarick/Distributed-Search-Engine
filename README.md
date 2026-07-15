@@ -6,7 +6,8 @@ Search engine for csv documents.
 
 ## Setup
 
-Place your dataset into the data folder under the backend dir.
+Clone the repo into your linux file system (There will be a big time penalty otherwise) and
+place the dataset into the data folder under the backend dir.
 
 The system is designed to only ingest a single .csv file and
 does not support multiple datasets currently.
@@ -32,27 +33,16 @@ does not support multiple datasets currently.
 
 ## How It Works
 
-The ingestion pipeline runs in three stages: steps, indexing, and parsing and insertion.
+The ingestion pipeline runs in two steps: indexing, and parsing & insertion. (outdated benchmarks)
 
-### Step One: Staging
-
-The program first stages the CSV file into a Docker named volume from a mount.
-The reason behind this, instead of just using the file directly from the mount,
-is to minimize the I/O overhead between Docker and the host OS.
-I also did not want to give the user an additional step of
-manually creating a named volume and copying the files to it beforehand.
-This means the user can still easily replace the file without creating a new volume.
-
-* This process averages around 1.5s, but saves ~10 seconds in total.
-
-### Step Two: Indexing
+### Step One: Indexing
 
 After staging the file onto the named volume,
 the program then indexes the entire document to prepare for multithreaded parsing.
 
 * It averages around 2.5s.
 
-### Step Three: Parsing & Insertion
+### Step Two: Parsing & Insertion
 
 This is where the program parses through the files and inserts them into MongoDB.
 Using a producer and consumer pattern with a LinkedBlockingQueue,

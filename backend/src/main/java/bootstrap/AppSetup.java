@@ -7,7 +7,6 @@ import logging.StopWatch;
 import tokenizer.StandardTokenizationV3;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 public final class AppSetup {
     private AppSetup() {
@@ -19,15 +18,10 @@ public final class AppSetup {
      */
     public static void run(Repository db) throws IOException {
         StopWatch total = new StopWatch("total pipeline");
-
-        StopWatch stage = new StopWatch("Staging");
-        Path path = FileLoader.stageCsv();
-        stage.stop();
-
         StopWatch parse = new StopWatch("Parsing pipeline");
 
         try {
-            CsvParser parser = new CsvParser(path);
+            CsvParser parser = new CsvParser();
             CreateWorkersForTask.run(parser, db, new StandardTokenizationV3());
 
             parse.stop();
@@ -37,7 +31,6 @@ public final class AppSetup {
         }
 
         total.stop();
-
     }
 
 }
