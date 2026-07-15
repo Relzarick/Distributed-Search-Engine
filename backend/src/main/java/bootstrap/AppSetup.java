@@ -17,11 +17,13 @@ public final class AppSetup {
      *
      */
     public static void run(Repository db) throws IOException {
-        StopWatch total = new StopWatch("total pipeline");
         StopWatch parse = new StopWatch("Parsing pipeline");
 
         try {
+            StopWatch index = new StopWatch("Index");
             CsvParser parser = new CsvParser();
+            index.stop();
+
             CreateWorkersForTask.run(parser, db, new StandardTokenizationV3());
 
             parse.stop();
@@ -29,8 +31,6 @@ public final class AppSetup {
             parse.stopOnFailure();
             throw new RuntimeException(e.getMessage(), e);
         }
-
-        total.stop();
     }
 
 }
