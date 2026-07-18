@@ -3,9 +3,11 @@ package indexer.tokenizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StandardTokenizationV3Test {
     private TokenStrategy tokenizer;
@@ -15,36 +17,42 @@ class StandardTokenizationV3Test {
         tokenizer = new StandardTokenizationV3();
     }
 
+    private Set<String> getTokens(String input) {
+        Set<String> tokens = new HashSet<>();
+        tokenizer.toTokens(input, tokens);
+
+        return tokens;
+    }
+
     @Test
     void normalSentenceTest() {
-        assertInstanceOf(List.class, tokenizer.toTokens("This, is a test!"));
-        assertEquals(List.of("test"), tokenizer.toTokens("This, is a test!"));
+        assertEquals(Set.of("test"), getTokens("This, is a test!"));
     }
 
     @Test
     void weirdSentenceTest() {
-        assertEquals(List.of("test"), tokenizer.toTokens("This+, is the 3rd test!"));
-        assertEquals(List.of("test"), tokenizer.toTokens("...test !!!"));
-        assertNull(tokenizer.toTokens("don't"));
+        assertEquals(Set.of("test"), getTokens("This+, is the 3rd test!"));
+        assertEquals(Set.of("test"), getTokens("...test !!!"));
+
+        assertTrue(getTokens("don't").isEmpty());
     }
 
     @Test
     void edgeCaseTest() {
-        assertEquals(List.of("test"), tokenizer.toTokens("test   "));
-        assertEquals(List.of("test"), tokenizer.toTokens("{_test'"));
+        assertEquals(Set.of("test"), getTokens("test   "));
+        assertEquals(Set.of("test"), getTokens("{_test'"));
     }
 
     @Test
     void numberTest() {
-        assertNull(tokenizer.toTokens("9"));
-        assertNull(tokenizer.toTokens("-9"));
-        assertNull(tokenizer.toTokens("+9"));
+        assertTrue(getTokens("9").isEmpty());
+        assertTrue(getTokens("-9").isEmpty());
+        assertTrue(getTokens("+9").isEmpty());
     }
 
     @Test
     void InputEmptyTest() {
-        assertNull(tokenizer.toTokens(""));
-        assertNull(tokenizer.toTokens(null));
+        assertTrue(getTokens("").isEmpty());
     }
 
 }

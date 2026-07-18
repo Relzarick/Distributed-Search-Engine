@@ -21,31 +21,31 @@ public final class InversedIndexer implements AutoCloseable {
      * @param batch contains a list of Bson documents
      */
     public void tokenizeToIndex(List<Document> batch) {
-        Map<String, Set<UUID>> dict = new HashMap<>(1000);
+        Map<String, List<UUID>> dict = new HashMap<>(2500);
+        Set<String> uniqueTokensPerDoc = new HashSet<>(250);
 
         for (Document doc : batch) {
             UUID id = (UUID) doc.get("_id");
+            uniqueTokensPerDoc.clear();
 
             for (Map.Entry<String, Object> field : doc.entrySet()) {
                 if (field.getKey().equals("_id"))
                     continue;
 
-                if (field.getValue() instanceof String value) {
-                    List<String> tokens = tk.tokenize(value);
-
-                    if (tokens != null)
-                        for (String key : tokens)
-                            dict.computeIfAbsent(key, k -> new HashSet<>()).add(id);
-                }
+                if (field.getValue() instanceof String value)
+                    tk.tokenizeInto(value, uniqueTokensPerDoc);
             }
+
+            for (String token : uniqueTokensPerDoc)
+                dict.computeIfAbsent(token, k -> new ArrayList<>(1)).add(id);
         }
 
         if (!dict.isEmpty())
             pushAndFlush(dict);
     }
 
-    private void pushAndFlush(Map<String, Set<UUID>> dict) {
-        for (Map.Entry<String, Set<UUID>> entry : dict.entrySet())
+    private void pushAndFlush(Map<String, List<UUID>> dict) {
+        for (Map.Entry<String, List<UUID>> entry : dict.entrySet())
             redis.set(entry.getKey(), entry.getValue().toArray(new UUID[0]));
 
         redis.flush();

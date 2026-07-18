@@ -34,9 +34,8 @@ public final class CsvParser {
 
             List<CsvRecord> firstPage = reader.readPage(0);
 
-            if (firstPage.isEmpty()) {
+            if (firstPage.isEmpty())
                 throw new NoSuchElementException("CSV is empty.");
-            }
 
             headers = firstPage.getFirst().getFields().toArray(new String[0]);
         }

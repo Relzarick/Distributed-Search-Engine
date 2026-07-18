@@ -1,16 +1,13 @@
 package indexer.tokenizer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 public class StandardTokenizationV3 extends BaseTokenization implements TokenStrategy {
     @Override
-    public List<String> toTokens(String input) {
+    public void toTokens(String input, Set<String> list) {
         if (input == null || input.isBlank()) {
-            return null;
+            return;
         }
-
-        List<String> tokens = new ArrayList<>();
 
         char[] chars = input.toCharArray();
         int length = chars.length;
@@ -49,11 +46,10 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
                 String token = new String(chars, wordStart, wordEnd - wordStart).toLowerCase();
 
                 if (!STOP_WORDS.contains(token))
-                    tokens.add(token);
+                    list.add(token);
             }
         }
 
-        return tokens.isEmpty() ? null : tokens;
     }
 
     private boolean isValid(char c) {
