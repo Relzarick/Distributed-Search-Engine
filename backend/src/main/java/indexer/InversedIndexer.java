@@ -21,10 +21,10 @@ public final class InversedIndexer implements AutoCloseable {
      * @param batch contains a list of Bson documents
      */
     public void tokenizeToIndex(List<Document> batch) {
-        Map<String, Set<String>> dict = new HashMap<>(1000);
+        Map<String, Set<UUID>> dict = new HashMap<>(1000);
 
         for (Document doc : batch) {
-            String id = doc.get("_id").toString();
+            UUID id = (UUID) doc.get("_id");
 
             for (Map.Entry<String, Object> field : doc.entrySet()) {
                 if (field.getKey().equals("_id"))
@@ -44,9 +44,9 @@ public final class InversedIndexer implements AutoCloseable {
             pushAndFlush(dict);
     }
 
-    private void pushAndFlush(Map<String, Set<String>> dict) {
-        for (Map.Entry<String, Set<String>> entry : dict.entrySet())
-            redis.set(entry.getKey(), entry.getValue().toArray(new String[0]));
+    private void pushAndFlush(Map<String, Set<UUID>> dict) {
+        for (Map.Entry<String, Set<UUID>> entry : dict.entrySet())
+            redis.set(entry.getKey(), entry.getValue().toArray(new UUID[0]));
 
         redis.flush();
     }
