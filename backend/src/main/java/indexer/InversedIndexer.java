@@ -1,9 +1,9 @@
 package indexer;
 
 import db.Index;
+import indexer.tokenizer.TokenStrategy;
+import indexer.tokenizer.Tokenizer;
 import org.bson.Document;
-import tokenizer.TokenStrategy;
-import tokenizer.Tokenizer;
 
 import java.util.*;
 
@@ -16,11 +16,15 @@ public final class InversedIndexer implements AutoCloseable {
         tk = new Tokenizer(strategy);
     }
 
+    /**
+     *
+     * @param batch contains a list of Bson documents
+     */
     public void tokenizeToIndex(List<Document> batch) {
         Map<String, Set<String>> dict = new HashMap<>(1000);
 
         for (Document doc : batch) {
-            String id = doc.getObjectId("_id").toHexString();
+            String id = doc.get("_id").toString();
 
             for (Map.Entry<String, Object> field : doc.entrySet()) {
                 if (field.getKey().equals("_id"))

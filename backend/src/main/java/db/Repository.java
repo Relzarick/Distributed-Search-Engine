@@ -1,5 +1,6 @@
 package db;
 
+import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 
 import java.util.List;
@@ -13,6 +14,8 @@ public interface Repository {
     void insert(List<Document> batch);
 
     Boolean ifExists();
+
+    MongoCollection<Document> getCollection();
 
     void close();
 }

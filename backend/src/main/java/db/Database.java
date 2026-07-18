@@ -9,6 +9,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertManyOptions;
 import org.bson.Document;
+import org.bson.UuidRepresentation;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +25,7 @@ public final class Database implements Repository {
 
     public Database() {
         MongoClientSettings settings = MongoClientSettings.builder()
+                .uuidRepresentation(UuidRepresentation.STANDARD)
                 .applyConnectionString(CONNECTION_STRING)
                 .applyToConnectionPoolSettings(b -> b
                         .minSize(1)
@@ -51,6 +53,11 @@ public final class Database implements Repository {
     @Override
     public Boolean ifExists() {
         return collection.find().first() != null;
+    }
+
+    @Override
+    public MongoCollection<Document> getCollection() {
+        return collection;
     }
 
     @Override

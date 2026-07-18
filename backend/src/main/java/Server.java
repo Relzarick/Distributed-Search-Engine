@@ -28,7 +28,6 @@ public class Server {
             System.out.println("Server is running on http://localhost:8080");
         } catch (RuntimeException | IOException e) {
             System.err.println("IO Error can't start the server");
-            e.printStackTrace();
         }
 
         // close db when jvm exits

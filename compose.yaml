@@ -23,8 +23,10 @@ services:
       - ./backend/src/main/resources/config.properties:/app/config.properties
       - ./backend/data:/app/data
     depends_on:
-      - db
-      - redis1
+      db:
+        condition: service_started
+      redis1:
+        condition: service_healthy
 
   db:
     container_name: mongrel
@@ -40,6 +42,13 @@ services:
   redis1:
     container_name: vermin
     image: redis:8.8-alpine
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
+      interval: 1m30s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
     ports:
       - "6379:6379"
     volumes:

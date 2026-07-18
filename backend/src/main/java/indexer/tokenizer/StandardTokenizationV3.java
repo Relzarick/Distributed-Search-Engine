@@ -1,10 +1,9 @@
-package tokenizer;
+package indexer.tokenizer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class StandardTokenizationV3 extends BaseTokenization implements TokenStrategy {
-
     @Override
     public List<String> toTokens(String input) {
         if (input == null || input.isBlank()) {
@@ -14,22 +13,23 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
         List<String> tokens = new ArrayList<>();
 
         char[] chars = input.toCharArray();
-        int len = chars.length;
+        int length = chars.length;
         int i = 0;
 
-        while (i < len) {
-            while (i < len && Character.isWhitespace(chars[i]))
+        while (i < length) {
+            while (i < length && Character.isWhitespace(chars[i]))
                 i++;
 
-            if (i >= len)
+            if (i >= length)
                 break;
 
             int start = i;
             boolean isDigit = false;
 
-            while (i < len && !Character.isWhitespace(chars[i])) {
+            while (i < length && !Character.isWhitespace(chars[i])) {
                 if (chars[i] >= '0' && chars[i] <= '9')
                     isDigit = true;
+
                 i++;
             }
             int end = i;
@@ -53,12 +53,11 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
             }
         }
 
-
         return tokens.isEmpty() ? null : tokens;
     }
 
     private boolean isValid(char c) {
-        return (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && c != '\'';
+        return (c < 'a' || c > 'z') && (c < 'A' || c > 'Z');
     }
 
 }

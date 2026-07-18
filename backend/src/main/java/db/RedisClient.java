@@ -34,7 +34,7 @@ public final class RedisClient implements Index {
         connection.flushCommands();
 
         try {
-            barrier.get(20, TimeUnit.SECONDS);
+            barrier.get(15, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             throw new RuntimeException("Redis pipeline execution failed: " + e.getCause().getMessage(), e);
         } catch (TimeoutException e) {

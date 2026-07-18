@@ -7,21 +7,25 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp dependency:go-offline
 COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp package -Dmaven.test.skip=true
 
+FROM alpine:3.20 AS profiler-downloader
+RUN wget https://github.com/async-profiler/async-profiler/releases/download/v4.4/async-profiler-4.4-linux-x64.tar.gz \
+    && tar -xzf async-profiler-4.4-linux-x64.tar.gz
+
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
 RUN mkdir data && chown appuser:appgroup data
 
+COPY --from=profiler-downloader --chown=appuser:appgroup /async-profiler-4.4-linux-x64 /app/async-profiler
 COPY --from=build --chown=appuser:appgroup /app/target/Distributed-Search-Engine-1.2-SNAPSHOT.jar app.jar
 
 USER appuser
 EXPOSE 8080
 ENTRYPOINT ["java"]
 
-CMD ["-XX:MaxRAMPercentage=70.0", "-XX:+UseZGC", "-jar", "app.jar"]
-#CMD ["-XX:MaxRAMPercentage=70.0", \
-#     "-XX:+UseZGC", \
-#     "-XX:StartFlightRecording=filename=/tmp/recording.jfr,duration=60s,settings=profile", \
-#     "-jar", "app.jar"]
+CMD ["-XX:MaxRAMPercentage=65.0", "-XX:+UseZGC", "-jar", "app.jar"]
+#CMD ["-XX:MaxRAMPercentage=65.0", \
+#      "-XX:+UseZGC", \
+#      "-agentpath:/app/async-profiler/lib/libasyncProfiler.so=start", \
+#      "-jar", "app.jar"]

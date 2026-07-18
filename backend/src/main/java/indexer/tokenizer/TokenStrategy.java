@@ -1,4 +1,4 @@
-package tokenizer;
+package indexer.tokenizer;
 
 import java.util.List;
 

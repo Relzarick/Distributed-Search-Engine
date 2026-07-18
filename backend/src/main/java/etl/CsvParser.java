@@ -4,6 +4,7 @@ import bootstrap.FileLoader;
 import de.siegmar.fastcsv.reader.CsvIndex;
 import de.siegmar.fastcsv.reader.CsvRecord;
 import de.siegmar.fastcsv.reader.IndexedCsvReader;
+import io.github.robsonkades.uuidv7.UUIDv7;
 import org.bson.Document;
 
 import java.io.IOException;
@@ -18,29 +19,26 @@ public final class CsvParser {
 
     private final CsvIndex index;
     private final int totalPages;
-    private String[] headers;
+    private final String[] headers;
 
     private static final int CAPACITY = 5000;
 
+    /**
+     *
+     * @throws IOException if path does not exist
+     */
     public CsvParser() throws IOException {
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().pageSize(CAPACITY).ofCsvRecord(PATH)) {
             index = reader.getIndex();
             totalPages = index.pages().size();
 
-            getHeaders();
-        }
-    }
+            List<CsvRecord> firstPage = reader.readPage(0);
 
-    /**
-     * @throws NoSuchElementException Crashes app if CSV is empty.
-     */
-    private void getHeaders() throws NoSuchElementException {
-        try (IndexedCsvReader<CsvRecord> r = IndexedCsvReader.builder().index(index).ofCsvRecord(PATH)) {
-            List<CsvRecord> firstPage = r.readPage(0);
+            if (firstPage.isEmpty()) {
+                throw new NoSuchElementException("CSV is empty.");
+            }
 
             headers = firstPage.getFirst().getFields().toArray(new String[0]);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
 
     }
@@ -59,7 +57,14 @@ public final class CsvParser {
         return new int[]{start, end};
     }
 
-    public void parseDataTo(BlockingQueue<QueueItem> queue, int start, int end) throws IOException, InterruptedException {
+    /**
+     *
+     * @param start page number for loop
+     * @param end   page number for loop
+     * @throws IOException          if path does not exist
+     * @throws InterruptedException is from the queues
+     */
+    public void parseDataTo(BlockingQueue<QueueItem> mongoQueue, BlockingQueue<QueueItem> redisQueue, int start, int end) throws IOException, InterruptedException {
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().index(index).pageSize(CAPACITY).ofCsvRecord(PATH)) {
             List<Document> batch = new ArrayList<>(CAPACITY); // A batch is a list of csv rows
 
@@ -71,25 +76,30 @@ public final class CsvParser {
                     batch.add(toDocument(page.get(j)));
 
                     if (batch.size() == CAPACITY) {
-                        queue.put(new QueueItem.DocumentBatch(batch));
+                        mongoQueue.put(new QueueItem.DocumentBatch(batch));
+                        redisQueue.put(new QueueItem.DocumentBatch(batch));
                         batch = new ArrayList<>(CAPACITY);
                     }
                 }
-
             }
 
-            if (!batch.isEmpty())
-                queue.put(new QueueItem.DocumentBatch(batch));
+            if (!batch.isEmpty()) {
+                mongoQueue.put(new QueueItem.DocumentBatch(batch));
+                redisQueue.put(new QueueItem.DocumentBatch(batch));
+            }
         }
 
     }
 
     /**
+     * This will also create a UUID7 for document _id
+     *
      * @param records Is the row of values that will map to headers.
      * @return A Document for mongo.
      */
     private Document toDocument(CsvRecord records) {
         Document doc = new Document();
+        doc.put("_id", UUIDv7.randomUUID());
 
         for (int i = 0; i < headers.length; i++)
             doc.put(headers[i], TypeConverter.convert(records.getField(i)));

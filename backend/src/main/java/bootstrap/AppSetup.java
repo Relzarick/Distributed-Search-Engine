@@ -1,10 +1,9 @@
 package bootstrap;
 
 import db.Repository;
-import etl.CreateWorkersForTask;
+import etl.CreateWorkers;
 import etl.CsvParser;
 import logging.StopWatch;
-import tokenizer.StandardTokenizationV3;
 
 import java.io.IOException;
 
@@ -20,11 +19,12 @@ public final class AppSetup {
         StopWatch parse = new StopWatch("Parsing pipeline");
 
         try {
-            StopWatch index = new StopWatch("Index");
+            StopWatch index = new StopWatch("CSV Index");
             CsvParser parser = new CsvParser();
             index.stop();
 
-            CreateWorkersForTask.run(parser, db, new StandardTokenizationV3());
+            CreateWorkers workers = new CreateWorkers();
+            workers.run(parser, db);
 
             parse.stop();
         } catch (Exception e) {
