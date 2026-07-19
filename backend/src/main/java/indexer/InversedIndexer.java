@@ -1,30 +1,25 @@
 package indexer;
 
-import db.Index;
+import etl.QueueItem;
 import indexer.tokenizer.TokenStrategy;
 import indexer.tokenizer.Tokenizer;
 import org.bson.Document;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 
-public final class InversedIndexer implements AutoCloseable {
-    private final Index redis;
+public final class InversedIndexer {
     private final Tokenizer tk;
 
-    public InversedIndexer(Index redisClient, TokenStrategy strategy) {
-        redis = redisClient;
+    public InversedIndexer(TokenStrategy strategy) {
         tk = new Tokenizer(strategy);
     }
 
-    /**
-     *
-     * @param batch contains a list of Bson documents
-     */
-    public void tokenizeToIndex(List<Document> batch) {
-        Map<String, List<UUID>> dict = new HashMap<>(2500);
+    public void tokenizeToQueue(List<Document> from, BlockingQueue<QueueItem> to) throws InterruptedException {
+        Map<String, List<UUID>> dict = new HashMap<>(131072);
         Set<String> uniqueTokensPerDoc = new HashSet<>(250);
 
-        for (Document doc : batch) {
+        for (Document doc : from) {
             UUID id = (UUID) doc.get("_id");
             uniqueTokensPerDoc.clear();
 
@@ -40,20 +35,7 @@ public final class InversedIndexer implements AutoCloseable {
                 dict.computeIfAbsent(token, k -> new ArrayList<>(1)).add(id);
         }
 
-        if (!dict.isEmpty())
-            pushAndFlush(dict);
-    }
-
-    private void pushAndFlush(Map<String, List<UUID>> dict) {
-        for (Map.Entry<String, List<UUID>> entry : dict.entrySet())
-            redis.set(entry.getKey(), entry.getValue().toArray(new UUID[0]));
-
-        redis.flush();
-    }
-
-    @Override
-    public void close() {
-        redis.close();
+        to.put(new QueueItem.IndexerBatch(dict));
     }
 
 }

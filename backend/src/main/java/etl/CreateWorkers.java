@@ -1,12 +1,15 @@
 package etl;
 
 import bootstrap.ConfigLoader;
+import db.Index;
 import db.RedisClient;
 import db.Repository;
 import indexer.InversedIndexer;
-import indexer.tokenizer.StandardTokenizationV3;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 /**
@@ -18,11 +21,16 @@ public final class CreateWorkers {
     private final int REDIS_TC = ConfigLoader.getInt("redis.threadCount", "2");
 
     private final BlockingQueue<QueueItem> mongoQueue = new LinkedBlockingQueue<>(100);
-    private final BlockingQueue<QueueItem> redisQueue = new LinkedBlockingQueue<>(300);
+    private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(100);
+    private final BlockingQueue<QueueItem> redisQueue = new ArrayBlockingQueue<>(300);
 
     private final ExecutorService parserThreadPool = Executors.newFixedThreadPool(PARSER_TC);
+    private final ExecutorService indexerThreadPool = Executors.newFixedThreadPool(PARSER_TC);
     private final ExecutorService mongoThreadPool = Executors.newFixedThreadPool(MONGO_TC);
     private final ExecutorService redisThreadPool = Executors.newFixedThreadPool(REDIS_TC);
+
+    private record PoisonPill(BlockingQueue<QueueItem> queue, int pillCount) {
+    }
 
     /**
      * This method throws unchecked exceptions to caller.
@@ -30,52 +38,78 @@ public final class CreateWorkers {
      * @throws CancellationException if the computation was cancelled
      * @throws CompletionException   if this future completed
      */
-    public void run(CsvParser parser, Repository db) {
-        CompletableFuture<Void> producers = runProducers(parser);
+    public void run(CsvParser parser, InversedIndexer indexer, Repository db) {
+        CompletableFuture<Void> producers = runProducers(parser, indexer);
         CompletableFuture<Void> consumers = runConsumers(db);
 
         CompletableFuture.allOf(producers, consumers).join();
     }
 
-    private CompletableFuture<Void> runProducers(CsvParser parser) {
-        CompletableFuture<?>[] futures = new CompletableFuture<?>[PARSER_TC];
+    private CompletableFuture<Void> runProducers(CsvParser parser, InversedIndexer indexer) {
+        CompletableFuture<?>[] parserFutures = new CompletableFuture<?>[PARSER_TC];
+        CompletableFuture<?>[] indexerFutures = new CompletableFuture<?>[PARSER_TC];
 
         for (int i = 0; i < PARSER_TC; i++) {
             final int index = i;
 
-            futures[i] = CompletableFuture.runAsync(() -> {
+            parserFutures[i] = CompletableFuture.runAsync(() -> {
                 try {
                     int[] range = parser.getPageRange(index, PARSER_TC);
-                    parser.parseDataTo(mongoQueue, redisQueue, range[0], range[1]);
+                    parser.parseDataTo(mongoQueue, indexerQueue, range[0], range[1]);
                 } catch (IOException | InterruptedException e) {
                     throw new CompletionException(e);
                 }
             }, parserThreadPool);
         }
 
+        for (int i = 0; i < PARSER_TC; i++) {
+            indexerFutures[i] = CompletableFuture.runAsync(() -> {
+                try {
+                    while (true) {
+                        QueueItem item = indexerQueue.take();
+
+                        if (item instanceof QueueItem.PoisonPill)
+                            break;
+
+                        QueueItem.DocumentBatch batch = (QueueItem.DocumentBatch) item;
+
+                        indexer.tokenizeToQueue(batch.documents(), redisQueue);
+                    }
+                } catch (Exception e) {
+                    throw new CompletionException(e);
+                }
+            }, indexerThreadPool);
+        }
+
+        CompletableFuture<Void> allParser = producerThrowableHelper(parserFutures, new PoisonPill(mongoQueue, MONGO_TC), new PoisonPill(indexerQueue, PARSER_TC));
+        CompletableFuture<Void> allIndexer = producerThrowableHelper(indexerFutures, new PoisonPill(redisQueue, REDIS_TC));
+
+        return CompletableFuture.allOf(allParser, allIndexer).whenComplete((result, throwable) -> {
+            parserThreadPool.shutdown();
+        });
+    }
+
+    private CompletableFuture<Void> producerThrowableHelper(CompletableFuture<?>[] futures, PoisonPill... targets) {
         return CompletableFuture.allOf(futures).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 try {
-                    for (int i = 0; i < MONGO_TC; i++)
-                        mongoQueue.put(new QueueItem.PoisonPill());
+                    for (PoisonPill target : targets) {
+                        for (int i = 0; i < target.pillCount(); i++)
+                            target.queue().put(new QueueItem.PoisonPill());
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    abortIngestion("Interrupted while queueing Mongo poison pills");
+                    abortIngestion("Interrupted while queueing poison pills");
                     throw new CompletionException(e);
                 }
             } else
                 abortIngestion("Producer pool failed: " + throwable);
-
-            parserThreadPool.shutdown();
         });
-
     }
 
     private CompletableFuture<Void> runConsumers(Repository db) {
         CompletableFuture<?>[] mongoFuturesArray = new CompletableFuture<?>[MONGO_TC];
         CompletableFuture<?>[] redisFuturesArray = new CompletableFuture<?>[REDIS_TC];
-
-        StandardTokenizationV3 strat = new StandardTokenizationV3();
 
         for (int i = 0; i < MONGO_TC; i++) {
             mongoFuturesArray[i] = CompletableFuture.runAsync(() -> {
@@ -102,15 +136,19 @@ public final class CreateWorkers {
 
         for (int i = 0; i < REDIS_TC; i++) {
             redisFuturesArray[i] = CompletableFuture.runAsync(() -> {
-                try (InversedIndexer indexer = new InversedIndexer(new RedisClient(), strat)) {
+                try (Index redis = new RedisClient()) {
                     while (true) {
                         QueueItem item = redisQueue.take();
 
                         if (item instanceof QueueItem.PoisonPill)
                             break;
 
-                        QueueItem.DocumentBatch batch = (QueueItem.DocumentBatch) item;
-                        indexer.tokenizeToIndex(batch.documents());
+                        QueueItem.IndexerBatch batch = (QueueItem.IndexerBatch) item;
+
+                        for (Map.Entry<String, List<UUID>> dict : batch.dict().entrySet())
+                            redis.set(dict.getKey(), dict.getValue().toArray(new UUID[0]));
+
+                        redis.flush();
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -158,6 +196,7 @@ public final class CreateWorkers {
 
     private void abortIngestion(String reason) {
         System.err.println("Aborting ingestion: " + reason);
+
         parserThreadPool.shutdownNow();
         mongoThreadPool.shutdownNow();
         redisThreadPool.shutdownNow();

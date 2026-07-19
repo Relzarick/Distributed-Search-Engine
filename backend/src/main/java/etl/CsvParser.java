@@ -39,7 +39,6 @@ public final class CsvParser {
 
             headers = firstPage.getFirst().getFields().toArray(new String[0]);
         }
-
     }
 
     /**
@@ -63,7 +62,7 @@ public final class CsvParser {
      * @throws IOException          if path does not exist
      * @throws InterruptedException is from the queues
      */
-    public void parseDataTo(BlockingQueue<QueueItem> mongoQueue, BlockingQueue<QueueItem> redisQueue, int start, int end) throws IOException, InterruptedException {
+    public void parseDataTo(BlockingQueue<QueueItem> queue1, BlockingQueue<QueueItem> queue2, int start, int end) throws IOException, InterruptedException {
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().index(index).pageSize(CAPACITY).ofCsvRecord(PATH)) {
             List<Document> batch = new ArrayList<>(CAPACITY); // A batch is a list of csv rows
 
@@ -75,19 +74,18 @@ public final class CsvParser {
                     batch.add(toDocument(page.get(j)));
 
                     if (batch.size() == CAPACITY) {
-                        mongoQueue.put(new QueueItem.DocumentBatch(batch));
-                        redisQueue.put(new QueueItem.DocumentBatch(batch));
+                        queue1.put(new QueueItem.DocumentBatch(batch));
+                        queue2.put(new QueueItem.DocumentBatch(batch));
                         batch = new ArrayList<>(CAPACITY);
                     }
                 }
             }
 
             if (!batch.isEmpty()) {
-                mongoQueue.put(new QueueItem.DocumentBatch(batch));
-                redisQueue.put(new QueueItem.DocumentBatch(batch));
+                queue1.put(new QueueItem.DocumentBatch(batch));
+                queue2.put(new QueueItem.DocumentBatch(batch));
             }
         }
-
     }
 
     /**

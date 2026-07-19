@@ -1,37 +1,31 @@
 package indexer;
 
-import db.Index;
+import etl.QueueItem;
 import indexer.tokenizer.StandardTokenizationV3;
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 @ExtendWith(MockitoExtension.class)
 class InversedIndexerTest {
     private InversedIndexer indexer;
-
-    @Mock
-    Index redis;
+    private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(100);
 
     @BeforeEach
     void setUp() {
-        indexer = new InversedIndexer(redis, new StandardTokenizationV3());
+        indexer = new InversedIndexer(new StandardTokenizationV3());
     }
 
     @Test
-    void tokenizeToIndexTestOutput() {
-        indexer.tokenizeToIndex(testData());
-    }
-
-    @Test
-    void closeIndexer() {
-        indexer.close();
+    void tokenizeToIndexTestOutput() throws InterruptedException {
+        indexer.tokenizeToQueue(testData(), indexerQueue);
     }
 
     List<Document> testData() {

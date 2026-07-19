@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * Interface for redis client.
  */
-public interface Index {
+public interface Index extends AutoCloseable {
     void set(String key, UUID[] doc);
 
     void flush();

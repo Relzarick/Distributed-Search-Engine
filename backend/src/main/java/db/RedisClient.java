@@ -15,8 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public final class RedisClient implements Index {
-    private static final io.lettuce.core.RedisClient CLIENT =
-            io.lettuce.core.RedisClient.create(RedisURI.Builder.redis("vermin", 6379).build());
+    private static final io.lettuce.core.RedisClient CLIENT = io.lettuce.core.RedisClient.create(RedisURI.Builder.redis("vermin", 6379).build());
 
     private static final UUIDCodec CODEC = new UUIDCodec();
 
@@ -50,7 +49,6 @@ public final class RedisClient implements Index {
             throw new RuntimeException("Redis pipeline interrupted.", e);
         }
     }
-
 
     @Override
     public Set<UUID> retrieve(String key) throws ExecutionException, InterruptedException {
