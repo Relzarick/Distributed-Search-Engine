@@ -22,7 +22,7 @@ public final class CreateWorkers {
 
     private final BlockingQueue<QueueItem> mongoQueue = new LinkedBlockingQueue<>(100);
     private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(100);
-    private final BlockingQueue<QueueItem> redisQueue = new ArrayBlockingQueue<>(300);
+    private final BlockingQueue<QueueItem> redisQueue = new ArrayBlockingQueue<>(400);
 
     private final ExecutorService parserThreadPool = Executors.newFixedThreadPool(PARSER_TC);
     private final ExecutorService indexerThreadPool = Executors.newFixedThreadPool(PARSER_TC);
@@ -175,18 +175,7 @@ public final class CreateWorkers {
      */
     private CompletableFuture<Void> futuresBatched(CompletableFuture<?>[] m, CompletableFuture<?>[] r) {
         CompletableFuture<Void> nestedRedisFutures = CompletableFuture.allOf(r);
-        CompletableFuture<Void> nestedMongofutures = CompletableFuture.allOf(m).whenComplete((result, throwable) -> {
-            if (throwable == null) {
-                try {
-                    for (int i = 0; i < REDIS_TC; i++)
-                        redisQueue.put(new QueueItem.PoisonPill());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    abortIngestion("Interrupted while queueing Redis poison pills");
-                }
-            } else
-                abortIngestion("Mongo futures failed: " + throwable);
-        });
+        CompletableFuture<Void> nestedMongofutures = CompletableFuture.allOf(m);
 
         return CompletableFuture.allOf(nestedMongofutures, nestedRedisFutures).whenComplete((result, throwable) -> {
             mongoThreadPool.shutdown();
@@ -198,6 +187,7 @@ public final class CreateWorkers {
         System.err.println("Aborting ingestion: " + reason);
 
         parserThreadPool.shutdownNow();
+        indexerThreadPool.shutdownNow();
         mongoThreadPool.shutdownNow();
         redisThreadPool.shutdownNow();
     }
