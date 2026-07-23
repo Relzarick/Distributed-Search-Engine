@@ -15,27 +15,29 @@ public final class InversedIndexer {
         tk = new Tokenizer(strategy);
     }
 
-    public void tokenizeToQueue(List<Document> from, BlockingQueue<QueueItem> to) throws InterruptedException {
-        Map<String, List<UUID>> dict = new HashMap<>(131072);
+    public void tokenizeToQueue(List<QueueItem.DocumentBatch> from, BlockingQueue<QueueItem> to) throws InterruptedException {
+        Map<String, List<UUID>> dict = new HashMap<>(220000, 1.0f);
         Set<String> uniqueTokensPerDoc = new HashSet<>(250);
 
-        for (Document doc : from) {
-            UUID id = (UUID) doc.get("_id");
-            uniqueTokensPerDoc.clear();
+        for (QueueItem.DocumentBatch batch : from) {
+            for (Document doc : batch.documents()) {
+                UUID id = (UUID) doc.get("_id");
+                uniqueTokensPerDoc.clear();
 
-            for (Map.Entry<String, Object> field : doc.entrySet()) {
-                if (field.getKey().equals("_id"))
-                    continue;
+                for (Map.Entry<String, Object> field : doc.entrySet()) {
+                    if (field.getKey().equals("_id"))
+                        continue;
 
-                if (field.getValue() instanceof String value)
-                    tk.tokenizeInto(value, uniqueTokensPerDoc);
+                    if (field.getValue() instanceof String value)
+                        tk.tokenizeInto(value, uniqueTokensPerDoc);
+                }
+
+                for (String token : uniqueTokensPerDoc)
+                    dict.computeIfAbsent(token, k -> new ArrayList<>(8)).add(id);
             }
-
-            for (String token : uniqueTokensPerDoc)
-                dict.computeIfAbsent(token, k -> new ArrayList<>(1)).add(id);
         }
 
         to.put(new QueueItem.IndexerBatch(dict));
     }
-
+    
 }

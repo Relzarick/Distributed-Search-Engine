@@ -33,6 +33,11 @@ services:
     image: mongo:8.3
     logging:
       driver: "none"
+    #    command: [
+    #      "--wiredTigerCollectionBlockCompressor", "zstd",
+    #      "--wiredTigerJournalCompressor", "zstd",
+    #      "--journalCommitInterval", "500"
+    #    ]
     ports:
       - "27017:27017"
     volumes:

@@ -12,7 +12,6 @@ import org.bson.Document;
 import org.bson.UuidRepresentation;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public final class Database implements Repository {
     private final MongoClient client;
@@ -27,10 +26,6 @@ public final class Database implements Repository {
         MongoClientSettings settings = MongoClientSettings.builder()
                 .uuidRepresentation(UuidRepresentation.STANDARD)
                 .applyConnectionString(CONNECTION_STRING)
-                .applyToConnectionPoolSettings(b -> b
-                        .minSize(1)
-                        .maxWaitTime(3, TimeUnit.SECONDS)
-                )
                 .build();
 
         client = MongoClients.create(settings);

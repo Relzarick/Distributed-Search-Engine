@@ -7,6 +7,7 @@ import db.Repository;
 import indexer.InversedIndexer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,7 +22,7 @@ public final class CreateWorkers {
     private final int REDIS_TC = ConfigLoader.getInt("redis.threadCount", "2");
 
     private final BlockingQueue<QueueItem> mongoQueue = new LinkedBlockingQueue<>(100);
-    private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(100);
+    private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(200);
     private final BlockingQueue<QueueItem> redisQueue = new ArrayBlockingQueue<>(400);
 
     private final ExecutorService parserThreadPool = Executors.newFixedThreadPool(PARSER_TC);
@@ -29,7 +30,7 @@ public final class CreateWorkers {
     private final ExecutorService mongoThreadPool = Executors.newFixedThreadPool(MONGO_TC);
     private final ExecutorService redisThreadPool = Executors.newFixedThreadPool(REDIS_TC);
 
-    private record PoisonPill(BlockingQueue<QueueItem> queue, int pillCount) {
+    private record Target(BlockingQueue<QueueItem> queue, int pillCount) {
     }
 
     /**
@@ -48,6 +49,7 @@ public final class CreateWorkers {
     private CompletableFuture<Void> runProducers(CsvParser parser, InversedIndexer indexer) {
         CompletableFuture<?>[] parserFutures = new CompletableFuture<?>[PARSER_TC];
         CompletableFuture<?>[] indexerFutures = new CompletableFuture<?>[PARSER_TC];
+        int indexerBuffer = 5;
 
         for (int i = 0; i < PARSER_TC; i++) {
             final int index = i;
@@ -65,15 +67,26 @@ public final class CreateWorkers {
         for (int i = 0; i < PARSER_TC; i++) {
             indexerFutures[i] = CompletableFuture.runAsync(() -> {
                 try {
+                    List<QueueItem.DocumentBatch> batchBuffer = new ArrayList<>(indexerBuffer);
+
                     while (true) {
                         QueueItem item = indexerQueue.take();
 
-                        if (item instanceof QueueItem.PoisonPill)
+                        if (item instanceof QueueItem.PoisonPill) {
+                            indexerQueue.put(item);
+
+                            if (!batchBuffer.isEmpty())
+                                indexer.tokenizeToQueue(batchBuffer, redisQueue);
+
                             break;
+                        }
 
-                        QueueItem.DocumentBatch batch = (QueueItem.DocumentBatch) item;
+                        batchBuffer.add((QueueItem.DocumentBatch) item);
 
-                        indexer.tokenizeToQueue(batch.documents(), redisQueue);
+                        if (batchBuffer.size() >= indexerBuffer) {
+                            indexer.tokenizeToQueue(batchBuffer, redisQueue);
+                            batchBuffer.clear();
+                        }
                     }
                 } catch (Exception e) {
                     throw new CompletionException(e);
@@ -81,19 +94,20 @@ public final class CreateWorkers {
             }, indexerThreadPool);
         }
 
-        CompletableFuture<Void> allParser = producerThrowableHelper(parserFutures, new PoisonPill(mongoQueue, MONGO_TC), new PoisonPill(indexerQueue, PARSER_TC));
-        CompletableFuture<Void> allIndexer = producerThrowableHelper(indexerFutures, new PoisonPill(redisQueue, REDIS_TC));
+        CompletableFuture<Void> allParser = insertPoisonPills(parserFutures, new Target(mongoQueue, MONGO_TC), new Target(indexerQueue, PARSER_TC));
+        CompletableFuture<Void> allIndexer = insertPoisonPills(indexerFutures, new Target(redisQueue, REDIS_TC));
 
         return CompletableFuture.allOf(allParser, allIndexer).whenComplete((result, throwable) -> {
             parserThreadPool.shutdown();
+            indexerThreadPool.shutdown();
         });
     }
 
-    private CompletableFuture<Void> producerThrowableHelper(CompletableFuture<?>[] futures, PoisonPill... targets) {
+    private CompletableFuture<Void> insertPoisonPills(CompletableFuture<?>[] futures, Target... targets) {
         return CompletableFuture.allOf(futures).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 try {
-                    for (PoisonPill target : targets) {
+                    for (Target target : targets) {
                         for (int i = 0; i < target.pillCount(); i++)
                             target.queue().put(new QueueItem.PoisonPill());
                     }
