@@ -8,15 +8,15 @@ import org.bson.Document;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
-public final class InversedIndexer {
+public final class InvertedIndexer {
     private final Tokenizer tk;
 
-    public InversedIndexer(TokenStrategy strategy) {
+    public InvertedIndexer(TokenStrategy strategy) {
         tk = new Tokenizer(strategy);
     }
 
     public void tokenizeToQueue(List<QueueItem.DocumentBatch> from, BlockingQueue<QueueItem> to) throws InterruptedException {
-        Map<String, List<UUID>> dict = new HashMap<>(220000, 1.0f);
+        Map<String, List<UUID>> dict = new HashMap<>(262144);
         Set<String> uniqueTokensPerDoc = new HashSet<>(250);
 
         for (QueueItem.DocumentBatch batch : from) {
@@ -39,5 +39,5 @@ public final class InversedIndexer {
 
         to.put(new QueueItem.IndexerBatch(dict));
     }
-    
+
 }

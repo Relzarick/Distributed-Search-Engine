@@ -35,11 +35,11 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
                 continue;
 
             int wordStart = start;
-            while (wordStart < end && isValid(chars[wordStart]))
+            while (wordStart < end && isNotValid(chars[wordStart]))
                 wordStart++;
 
             int wordEnd = end;
-            while (wordEnd > wordStart && isValid(chars[wordEnd - 1]))
+            while (wordEnd > wordStart && isNotValid(chars[wordEnd - 1]))
                 wordEnd--;
 
             if (wordStart < wordEnd) {
@@ -52,7 +52,7 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
 
     }
 
-    private boolean isValid(char c) {
+    private boolean isNotValid(char c) {
         return (c < 'a' || c > 'z') && (c < 'A' || c > 'Z');
     }
 

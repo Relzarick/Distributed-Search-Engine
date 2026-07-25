@@ -1,7 +1,7 @@
 package indexer;
 
 import etl.QueueItem;
-import indexer.tokenizer.StandardTokenizationV3;
+import indexer.tokenizer.StemTokenization;
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,30 +10,34 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @ExtendWith(MockitoExtension.class)
-class InversedIndexerTest {
-    private InversedIndexer indexer;
-    private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(100);
+class InvertedIndexerTest {
+    private InvertedIndexer indexer;
+    private final BlockingQueue<QueueItem> indexerQueue = new LinkedBlockingQueue<>();
 
     @BeforeEach
     void setUp() {
-        indexer = new InversedIndexer(new StandardTokenizationV3());
+        indexer = new InvertedIndexer(new StemTokenization());
     }
 
     @Test
     void tokenizeToIndexTestOutput() throws InterruptedException {
-        indexer.tokenizeToQueue(testData(), indexerQueue);
+        indexer.tokenizeToQueue(List.of(testData()), indexerQueue);
+        assertFalse(indexerQueue.isEmpty());
     }
 
-    List<Document> testData() {
+    QueueItem.DocumentBatch testData() {
         List<Document> docs = new ArrayList<>();
 
         // 1. Birth of a Monster
         docs.add(new Document()
-                .append("_id", "019f72bf-c76f-75d1-8119-12394b6d413c")
+                .append("_id", UUID.fromString("019f72bf-c76f-75d1-8119-12394b6d413c"))
                 .append("id", 852962)
                 .append("title", "Birth of a Monster")
                 .append("vote_average", 0.0)
@@ -66,7 +70,7 @@ class InversedIndexerTest {
 
         // 2. Chhota Bheem: The Crown of Valhalla
         docs.add(new Document()
-                .append("_id", "019f72bf-c770-755e-8cfd-4357fc0bf375")
+                .append("_id", UUID.fromString("019f72bf-c770-755e-8cfd-4357fc0bf375"))
                 .append("id", 852963)
                 .append("title", "Chhota Bheem: The Crown of Valhalla")
                 .append("vote_average", 10.0)
@@ -99,7 +103,7 @@ class InversedIndexerTest {
 
         // 3. Nezlob, Kristino
         docs.add(new Document()
-                .append("_id", "019f72bf-c770-755e-8cfd-4357fc0bf376")
+                .append("_id", UUID.fromString("019f72bf-c770-755e-8cfd-4357fc0bf376"))
                 .append("id", 852964)
                 .append("title", "Nezlob, Kristino")
                 .append("vote_average", 4.0)
@@ -132,7 +136,7 @@ class InversedIndexerTest {
 
         // 4. Chhota Bheem and the Shinobi Secret
         docs.add(new Document()
-                .append("_id", "019f72bf-c770-755e-8cfd-4357fc0bf377")
+                .append("_id", UUID.fromString("019f72bf-c770-755e-8cfd-4357fc0bf377"))
                 .append("id", 852965)
                 .append("title", "Chhota Bheem and the Shinobi Secret")
                 .append("vote_average", 0.0)
@@ -165,7 +169,7 @@ class InversedIndexerTest {
 
         // 5. Stories of the Subconscious Mind
         docs.add(new Document()
-                .append("_id", "019f72bf-c770-755e-8cfd-4357fc0bf378")
+                .append("_id", UUID.fromString("019f72bf-c770-755e-8cfd-4357fc0bf378"))
                 .append("id", 852966)
                 .append("title", "Stories of the Subconscious Mind")
                 .append("vote_average", 6.0)
@@ -196,6 +200,7 @@ class InversedIndexerTest {
                 .append("poster_path", "/uemRTRhoLewcWOXxqvKBA6dnv7B.jpg")
         );
 
-        return docs;
+        return new QueueItem.DocumentBatch(docs);
     }
+
 }

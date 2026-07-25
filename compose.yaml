@@ -47,6 +47,7 @@ services:
   redis1:
     container_name: vermin
     image: redis:8.8-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
       test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
       interval: 1m30s
@@ -58,6 +59,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data1:/data
+      - ./backend/redis/redis.conf:/usr/local/etc/redis/redis.conf
 
 #  redis2:
 #    container_name: rat

@@ -4,7 +4,7 @@ import bootstrap.ConfigLoader;
 import db.Index;
 import db.RedisClient;
 import db.Repository;
-import indexer.InversedIndexer;
+import indexer.InvertedIndexer;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,14 +39,14 @@ public final class CreateWorkers {
      * @throws CancellationException if the computation was cancelled
      * @throws CompletionException   if this future completed
      */
-    public void run(CsvParser parser, InversedIndexer indexer, Repository db) {
+    public void run(CsvParser parser, InvertedIndexer indexer, Repository db) {
         CompletableFuture<Void> producers = runProducers(parser, indexer);
         CompletableFuture<Void> consumers = runConsumers(db);
 
         CompletableFuture.allOf(producers, consumers).join();
     }
 
-    private CompletableFuture<Void> runProducers(CsvParser parser, InversedIndexer indexer) {
+    private CompletableFuture<Void> runProducers(CsvParser parser, InvertedIndexer indexer) {
         CompletableFuture<?>[] parserFutures = new CompletableFuture<?>[PARSER_TC];
         CompletableFuture<?>[] indexerFutures = new CompletableFuture<?>[PARSER_TC];
         int indexerBuffer = 5;
