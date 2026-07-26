@@ -1,5 +1,6 @@
 package db;
 
+import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -8,29 +9,30 @@ import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class RedisClient implements Index {
-    private static final io.lettuce.core.RedisClient CLIENT = io.lettuce.core.RedisClient.create(RedisURI.Builder.redis("vermin", 6379).build());
-
+public final class RedisService implements Index {
+    private final RedisClient client;
     private static final UUIDCodec CODEC = new UUIDCodec();
 
     private final StatefulRedisConnection<String, UUID> connection;
     private final RedisAsyncCommands<String, UUID> async;
 
-    public RedisClient() {
-        connection = CLIENT.connect(CODEC);
+    public RedisService(String host) {
+        client = RedisClient.create(RedisURI.Builder.redis(host, 6379).build());
+        connection = client.connect(CODEC);
         connection.setAutoFlushCommands(false);
         async = connection.async();
     }
 
     @Override
-    public void set(String key, UUID[] docs) {
-        async.sadd(key, docs);
+    public void set(String key, List<UUID> docs) {
+        async.sadd(key, docs.toArray(UUID[]::new));
     }
 
     @Override
@@ -61,6 +63,7 @@ public final class RedisClient implements Index {
     @Override
     public void close() {
         connection.close();
+        client.close();
     }
 
     private static class UUIDCodec implements RedisCodec<String, UUID> {

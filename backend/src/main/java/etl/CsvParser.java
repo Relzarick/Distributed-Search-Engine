@@ -5,7 +5,8 @@ import de.siegmar.fastcsv.reader.CsvIndex;
 import de.siegmar.fastcsv.reader.CsvRecord;
 import de.siegmar.fastcsv.reader.IndexedCsvReader;
 import io.github.robsonkades.uuidv7.UUIDv7;
-import org.bson.Document;
+import org.bson.BsonBinary;
+import org.bson.BsonDocument;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -56,6 +57,7 @@ public final class CsvParser {
     }
 
     /**
+     * This batches documents into chunks of 5k
      *
      * @param start page number for loop
      * @param end   page number for loop
@@ -64,7 +66,7 @@ public final class CsvParser {
      */
     public void parseDataTo(BlockingQueue<QueueItem> queue1, BlockingQueue<QueueItem> queue2, int start, int end) throws IOException, InterruptedException {
         try (IndexedCsvReader<CsvRecord> reader = IndexedCsvReader.builder().index(index).pageSize(CAPACITY).ofCsvRecord(PATH)) {
-            List<Document> batch = new ArrayList<>(CAPACITY); // A batch is a list of csv rows
+            List<BsonDocument> batch = new ArrayList<>(CAPACITY); // A batch is a list of csv rows
 
             for (int i = start; i < end; i++) { // Page loop
                 List<CsvRecord> page = reader.readPage(i);
@@ -94,9 +96,11 @@ public final class CsvParser {
      * @param records Is the row of values that will map to headers.
      * @return A Document for mongo.
      */
-    private Document toDocument(CsvRecord records) {
-        Document doc = new Document();
-        doc.put("_id", UUIDv7.randomUUID());
+    private BsonDocument toDocument(CsvRecord records) {
+        int capacity = (int) Math.ceil((headers.length + 1) / 0.75f);
+
+        BsonDocument doc = new BsonDocument(capacity);
+        doc.put("_id", new BsonBinary(UUIDv7.randomUUID()));
 
         for (int i = 0; i < headers.length; i++)
             doc.put(headers[i], TypeConverter.convert(records.getField(i)));

@@ -3,6 +3,7 @@ package indexer;
 import etl.QueueItem;
 import indexer.tokenizer.StemTokenization;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +34,7 @@ class InvertedIndexerTest {
     }
 
     QueueItem.DocumentBatch testData() {
-        List<Document> docs = new ArrayList<>();
+        List<Bson> docs = new ArrayList<>();
 
         // 1. Birth of a Monster
         docs.add(new Document()

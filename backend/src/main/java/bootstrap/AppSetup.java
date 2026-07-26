@@ -3,6 +3,7 @@ package bootstrap;
 import db.Repository;
 import etl.CreateWorkers;
 import etl.CsvParser;
+import etl.RedisShardRouter;
 import indexer.InvertedIndexer;
 import indexer.tokenizer.StemTokenization;
 import logging.StopWatch;
@@ -28,7 +29,9 @@ public final class AppSetup {
             CreateWorkers workers = new CreateWorkers();
             InvertedIndexer indexer = new InvertedIndexer(new StemTokenization());
 
-            workers.run(parser, indexer, db);
+            try (RedisShardRouter router = new RedisShardRouter()) {
+                workers.run(parser, indexer, db, router);
+            }
 
             parse.stop();
         } catch (Exception e) {

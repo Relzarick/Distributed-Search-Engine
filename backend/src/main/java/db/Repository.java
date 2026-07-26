@@ -1,7 +1,7 @@
 package db;
 
 import com.mongodb.client.MongoCollection;
-import org.bson.Document;
+import org.bson.BsonDocument;
 
 import java.util.List;
 
@@ -9,13 +9,13 @@ import java.util.List;
  * All databases should implement this interface
  */
 public interface Repository {
-    Document fetch(String value);
+    BsonDocument fetch(String value);
 
-    void insert(List<Document> batch);
+    void insert(List<BsonDocument> batch);
 
     Boolean ifExists();
 
-    MongoCollection<Document> getCollection();
+    MongoCollection<BsonDocument> getCollection();
 
     void close();
 }

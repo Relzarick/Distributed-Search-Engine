@@ -1,9 +1,12 @@
 package indexer.tokenizer;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BaseTokenization {
-    protected static final Set<String> STOP_WORDS = Set.of(
+    protected static final Set<CharSeq> STOP_WORDS = Stream.of(
             // Articles
             "a", "an", "the",
 
@@ -104,6 +107,49 @@ public class BaseTokenization {
             "could've", "might've", "must've", "should've",
             "that'll", "that've", "there'd", "there'll", "there're", "there've",
             "'tis", "'twas", "would've"
-    );
+    ).map(CharSeq::new).collect(Collectors.toUnmodifiableSet());
+
+    public static class CharSeq {
+        private char[] chars;
+        private int length;
+
+        public CharSeq(String str) {
+            chars = str.toCharArray();
+            length = chars.length;
+        }
+
+        public CharSeq() {
+        }
+
+        public void set(char[] chars, int length) {
+            this.chars = chars;
+            this.length = length;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 1;
+
+            for (int i = 0; i < length; i++)
+                hash = 31 * hash + chars[i];
+
+            return hash;
+        }
+
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+
+            if (obj == null || getClass() != obj.getClass())
+                return false;
+
+            CharSeq other = (CharSeq) obj;
+            
+            return Arrays.equals(this.chars, 0, this.length, other.chars, 0, other.length);
+        }
+
+    }
 
 }

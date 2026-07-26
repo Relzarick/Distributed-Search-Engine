@@ -1,5 +1,7 @@
 package etl;
 
+import org.bson.*;
+
 /**
  * Sorts data into propper types and returns
  * This accepts Infinity and NaN as floats
@@ -8,9 +10,9 @@ public final class TypeConverter {
     private TypeConverter() {
     }
 
-    public static Object convert(String value) {
+    public static BsonValue convert(String value) {
         if (value == null || value.isBlank()) {
-            return null;
+            return BsonNull.VALUE;
         }
 
         int len = value.length();
@@ -19,7 +21,7 @@ public final class TypeConverter {
 
         if (firstChar == '-' || firstChar == '+') {
             if (len == 1)
-                return value;
+                return new BsonString(value);
 
             start = 1;
         }
@@ -41,25 +43,24 @@ public final class TypeConverter {
         }
 
         if (!isDigit || dotCount > 1)
-            return value;
+            return new BsonString(value);
 
         if (dotCount == 1)
-            return Double.parseDouble(value);
+            return new BsonDouble(Double.parseDouble(value));
 
-        char first = value.charAt(0);
-        int digits = value.length() - (first == '-' || first == '+' ? 1 : 0);
+        int digits = len - start;
 
         if (digits > 19)
-            return value;
+            return new BsonString(value);
 
         try {
             long parsedValue = Long.parseLong(value);
             if (parsedValue >= Integer.MIN_VALUE && parsedValue <= Integer.MAX_VALUE)
-                return (int) parsedValue;
+                return new BsonInt32((int) parsedValue);
 
-            return parsedValue;
+            return new BsonInt64(parsedValue);
         } catch (NumberFormatException e) { // exceeds Long limit (it's some weird ass number)
-            return value;
+            return new BsonString(value);
         }
 
     }

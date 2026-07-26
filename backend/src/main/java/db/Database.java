@@ -8,14 +8,14 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertManyOptions;
-import org.bson.Document;
+import org.bson.BsonDocument;
 import org.bson.UuidRepresentation;
 
 import java.util.List;
 
 public final class Database implements Repository {
     private final MongoClient client;
-    private final MongoCollection<Document> collection;
+    private final MongoCollection<BsonDocument> collection;
 
     private static final ConnectionString CONNECTION_STRING = new ConnectionString("mongodb://mongrel:27017");
     private static final InsertManyOptions UNORDERED = new InsertManyOptions().ordered(false);
@@ -31,17 +31,17 @@ public final class Database implements Repository {
         client = MongoClients.create(settings);
 
         MongoDatabase db = client.getDatabase(DATABASENAME);
-        collection = db.getCollection(COLLECTION);
+        collection = db.getCollection(COLLECTION, BsonDocument.class);
     }
 
     @Override
-    public Document fetch(String id) {
+    public BsonDocument fetch(String id) {
         return collection.find(Filters.eq("_id", id)).first();
 //         should make this fetch a bunch at once?
     }
 
     @Override
-    public void insert(List<Document> batch) {
+    public void insert(List<BsonDocument> batch) {
         collection.insertMany(batch, UNORDERED);
     }
 
@@ -51,7 +51,7 @@ public final class Database implements Repository {
     }
 
     @Override
-    public MongoCollection<Document> getCollection() {
+    public MongoCollection<BsonDocument> getCollection() {
         return collection;
     }
 

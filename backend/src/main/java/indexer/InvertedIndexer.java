@@ -3,7 +3,9 @@ package indexer;
 import etl.QueueItem;
 import indexer.tokenizer.TokenStrategy;
 import indexer.tokenizer.Tokenizer;
-import org.bson.Document;
+import org.bson.BsonDocument;
+import org.bson.BsonString;
+import org.bson.BsonValue;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -15,26 +17,27 @@ public final class InvertedIndexer {
         tk = new Tokenizer(strategy);
     }
 
-    public void tokenizeToQueue(List<QueueItem.DocumentBatch> from, BlockingQueue<QueueItem> to) throws InterruptedException {
+    public void tokenizeToQueue(QueueItem.DocumentBatch from, BlockingQueue<QueueItem> to) throws InterruptedException {
         Map<String, List<UUID>> dict = new HashMap<>(262144);
-        Set<String> uniqueTokensPerDoc = new HashSet<>(250);
+        Set<String> uniqueTokensPerDoc = new HashSet<>(256);
 
-        for (QueueItem.DocumentBatch batch : from) {
-            for (Document doc : batch.documents()) {
-                UUID id = (UUID) doc.get("_id");
-                uniqueTokensPerDoc.clear();
+        // This is the looping a batch of 5k documents
+        for (BsonDocument doc : from.documents()) {
+            UUID id = doc.getBinary("_id").asUuid();
+            uniqueTokensPerDoc.clear();
 
-                for (Map.Entry<String, Object> field : doc.entrySet()) {
-                    if (field.getKey().equals("_id"))
-                        continue;
+            // This is looping each field in the individual docuemnts
+            for (Map.Entry<String, BsonValue> field : doc.entrySet()) {
+                if (field.getKey().equals("_id"))
+                    continue;
 
-                    if (field.getValue() instanceof String value)
-                        tk.tokenizeInto(value, uniqueTokensPerDoc);
-                }
-
-                for (String token : uniqueTokensPerDoc)
-                    dict.computeIfAbsent(token, k -> new ArrayList<>(8)).add(id);
+                if (field.getValue() instanceof BsonString str)
+                    tk.tokenizeInto(str.getValue(), uniqueTokensPerDoc);
             }
+
+            // For each token, check if it already exists in dict else add it
+            for (String token : uniqueTokensPerDoc)
+                dict.computeIfAbsent(token, k -> new ArrayList<>(1)).add(id);
         }
 
         to.put(new QueueItem.IndexerBatch(dict));

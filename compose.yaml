@@ -1,18 +1,8 @@
 name: search
 
 services:
-  #  frontend:
-  #    container_name: wretch
-  #    build:
-  #      context: ./frontend
-  #      dockerfile: Dockerfile.web
-  #    ports:
-  #      - "3000:3000"
-  #    depends_on:
-  #      - backend
-
   backend:
-    container_name: scum
+    container_name: maggot
     build:
       context: ./backend
       dockerfile: Dockerfile.server
@@ -26,6 +16,8 @@ services:
       db:
         condition: service_started
       redis1:
+        condition: service_healthy
+      redis2:
         condition: service_healthy
 
   db:
@@ -45,9 +37,8 @@ services:
       - mongo_config:/data/configdb
 
   redis1:
-    container_name: vermin
+    container_name: wench
     image: redis:8.8-alpine
-    command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
       test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
       interval: 1m30s
@@ -59,25 +50,24 @@ services:
       - "6379:6379"
     volumes:
       - redis_data1:/data
-      - ./backend/redis/redis.conf:/usr/local/etc/redis/redis.conf
 
-#  redis2:
-#    container_name: rat
-#    image: redis:8.8-alpine
-#    ports:
-#      - "6380:6379"
-#    volumes:
-#      - redis_data2:/data
-#
-#  redis3:
-#    container_name: maggot
-#    image: redis:8.8-alpine
-#    ports:
-#      - "6381:6379"
-#    volumes:
-#      - redis_data3:/data
+  redis2:
+    container_name: wretch
+    image: redis:8.8-alpine
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
+      interval: 1m30s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data2:/data
 
 volumes:
   mongo_data:
   mongo_config:
   redis_data1:
+  redis_data2:

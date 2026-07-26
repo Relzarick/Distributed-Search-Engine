@@ -9,6 +9,12 @@ public class Tokenizer {
         this.strat = strat;
     }
 
+    /**
+     * Tokenizes the String and adds unique words into the list.
+     *
+     * @param inputs Is the string that will be tokenized
+     * @param list   Is the list that the tokens will be added to
+     */
     public void tokenizeInto(String inputs, Set<String> list) {
         strat.toTokens(inputs, list);
     }
