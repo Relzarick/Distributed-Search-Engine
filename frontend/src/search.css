@@ -1,0 +1,76 @@
+.header {
+  margin-top: 15vh;
+  margin-bottom: 3.2rem;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 4.8rem;
+  font-weight: 700;
+  margin: 0 0 0.8rem 0;
+  letter-spacing: -0.025em;
+}
+
+.header .subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.8rem;
+}
+
+.search-container {
+  width: 90%;
+  max-width: 60rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.search-form {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.search-form input[type="search"] {
+  flex: 1;
+  padding: 1.2rem 1.6rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 1.8rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.search-form input[type="search"]:focus {
+  border-color: var(--color-accent);
+}
+
+.search-form input[type="search"]::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-form button {
+  padding: 1.2rem 2.4rem;
+  background-color: var(--color-accent);
+  color: #ffffff;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.search-form button:hover {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.output {
+  margin-top: 3.2rem;
+  width: 100%;
+}
