@@ -2,6 +2,7 @@ package etl;
 
 import bootstrap.ConfigLoader;
 import db.Repository;
+import etl.parser.CsvParser;
 import indexer.InvertedIndexer;
 
 import java.io.IOException;
@@ -40,6 +41,10 @@ public final class CreateWorkers {
         CompletableFuture.allOf(producers, consumers).join();
     }
 
+    /**
+     * Parser threadPool feeds two queues: mongo and indxer
+     * Indexer threadPool takes from the queue and feeds redis
+     */
     private CompletableFuture<Void> runProducers(CsvParser parser, InvertedIndexer indexer) {
         CompletableFuture<?>[] parserFutures = new CompletableFuture<?>[PARSER_TC];
         CompletableFuture<?>[] indexerFutures = new CompletableFuture<?>[INDEXER_TC];
@@ -101,6 +106,9 @@ public final class CreateWorkers {
         });
     }
 
+    /**
+     * Consumers will only do insertions
+     */
     private CompletableFuture<Void> runConsumers(Repository db, RedisShardRouter router) {
         CompletableFuture<?>[] mongoFuturesArray = new CompletableFuture<?>[MONGO_TC];
 
@@ -137,7 +145,7 @@ public final class CreateWorkers {
 
                     QueueItem.IndexerBatch batch = (QueueItem.IndexerBatch) item;
 
-                    router.routeToRedis(batch.dict());
+                    router.routeToRedis(batch.dict(), batch.docIds());
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

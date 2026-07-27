@@ -2,8 +2,8 @@ package bootstrap;
 
 import db.Repository;
 import etl.CreateWorkers;
-import etl.CsvParser;
 import etl.RedisShardRouter;
+import etl.parser.CsvParser;
 import indexer.InvertedIndexer;
 import indexer.tokenizer.StemTokenization;
 import logging.StopWatch;
