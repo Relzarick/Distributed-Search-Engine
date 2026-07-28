@@ -44,25 +44,27 @@ parsing.
 ### Step Two: Parsing & Insertion
 
 This is where the program parses through the files and inserts them into MongoDB. The pure Mongo throughput hits around
-29.5k RPS (rows per second).
+37.0k RPS (rows per second).
 
-- Averages ~41s at around 29.1k RPS.
+- Averages ~32.7s at around 37.0k RPS.
 
 The inverted indexer runs concurrently off a separate queue, tokenizing batches and building the in-memory dictionary.
 
-- Averages ~45s at around 27.0k RPS.
+- Averages ~32.7s at around 365.0k tokens/sec.
 
-Indexed keys are then routed to sharded Redis via jump consistent hashing, with each shard flushed asynchronously in
-pipelined batches.
+Indexed keys are then routed to sharded Redis via jump consistent hashing (4 shards), with each shard flushed
+asynchronously in pipelined batches.
 
-- Averages ~48s at around 244.1k commands/sec.
+- Averages ~32.7s at around 365.3k commands/sec (11.96M SADD commands, 52.8M UUID entries, 11,953 pipeline flushes).
 
 ## Performance Benchmarks
 
-| Metric                   | Throughput       |
-|--------------------------|------------------|
-| **Total Pipeline**       | ~23.2k RPS       |
-| **Parsing & Processing** | ~29.1k RPS       |
-| **Pure Mongo Operation** | ~29.5k RPS       |
-| **Indexing**             | ~27.0k RPS       |
-| **Redis Commands**       | ~244.1k cmds/sec |
+The dataset tested contained around 1.21 million CSV rows.
+
+| Metric                   | Throughput         |
+|--------------------------|--------------------|
+| **Total Pipeline**       | ~33.8k RPS         |
+| **Parsing & Processing** | ~37.7k RPS         |
+| **Pure Mongo Operation** | ~37.0k RPS         |
+| **Indexing**             | ~365.0k tokens/sec |
+| **Redis Commands**       | ~365.3k cmds/sec   |

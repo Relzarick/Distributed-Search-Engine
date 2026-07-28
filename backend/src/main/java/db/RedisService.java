@@ -11,8 +11,6 @@ import io.lettuce.core.protocol.CommandArgs;
 import io.lettuce.core.protocol.CommandType;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -36,27 +34,31 @@ public final class RedisService implements Index {
 
     @Override
     public void set(String key, UUID[] docs) {
-        final int CHUNK_SIZE = 1000;
-        List<UUID> docList = Arrays.asList(docs);
+        final int CHUNK_SIZE = 512;
+        int len = docs.length;
 
-        // If it is small enough, send it directly to avoid chunking overhead
-        if (docs.length <= CHUNK_SIZE) {
+        // If it is small enough, send it directly to avoid chunking
+        if (len <= CHUNK_SIZE) {
             CommandArgs<String, UUID> args = new CommandArgs<>(CODEC).addKey(key).addValues(docs);
             async.dispatch(CommandType.SADD, new IntegerOutput<>(CODEC), args);
+
             return;
         }
 
-        for (int i = 0; i < docs.length; i += CHUNK_SIZE) {
-            int end = Math.min(docs.length, i + CHUNK_SIZE);
-            List<UUID> view = docList.subList(i, end);
+        for (int i = 0; i < len; i += CHUNK_SIZE) {
+            int end = Math.min(len, i + CHUNK_SIZE);
 
-            CommandArgs<String, UUID> args = new CommandArgs<>(CODEC).addKey(key).addValues(view);
+            CommandArgs<String, UUID> args = new CommandArgs<>(CODEC).addKey(key);
+
+            for (int j = i; j < end; j++)
+                args.addValues(docs[j]);
+
             async.dispatch(CommandType.SADD, new IntegerOutput<>(CODEC), args);
         }
     }
 
     @Override
-    public void flush() { // this ping is not the main concern for now
+    public void flush() {
         RedisFuture<String> barrier = async.ping();
         connection.flushCommands();
 

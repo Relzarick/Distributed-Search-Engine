@@ -20,8 +20,10 @@ public class RedisShardRouter implements AutoCloseable {
 
     public RedisShardRouter() {
         shards = new Writer[]{
-                new Writer(new RedisService("wench")),
-                new Writer(new RedisService("wretch"))
+                new Writer(new RedisService("r1")),
+                new Writer(new RedisService("r2")),
+                new Writer(new RedisService("r3")),
+                new Writer(new RedisService("r4")),
         };
     }
 
@@ -53,9 +55,8 @@ public class RedisShardRouter implements AutoCloseable {
         for (int i = 0; i < shards.length; i++) {
             Map<String, UUID[]> subBatch = batches.get(i);
 
-            if (!subBatch.isEmpty()) {
+            if (!subBatch.isEmpty())
                 shards[i].queueBatch(subBatch);
-            }
         }
     }
 

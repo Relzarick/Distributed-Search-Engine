@@ -2,7 +2,7 @@ name: search
 
 services:
   backend:
-    container_name: maggot
+    container_name: wretch
     build:
       context: ./backend
       dockerfile: Dockerfile.server
@@ -19,6 +19,10 @@ services:
         condition: service_healthy
       redis2:
         condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
 
   db:
     container_name: mongrel
@@ -26,7 +30,6 @@ services:
     logging:
       driver: "none"
     command: [
-      "--wiredTigerCacheSizeGB", "2",
       "--wiredTigerCollectionBlockCompressor", "zstd",
       "--wiredTigerJournalCompressor", "zstd",
       "--journalCommitInterval", "500"
@@ -36,9 +39,13 @@ services:
     volumes:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   redis1:
-    container_name: wench
+    container_name: r1
     image: redis:8.8-alpine
     healthcheck:
       test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
@@ -54,10 +61,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 1.5G
 
   redis2:
-    container_name: wretch
+    container_name: r2
     image: redis:8.8-alpine
     healthcheck:
       test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
@@ -73,10 +80,50 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 1.5G
+
+  redis3:
+    container_name: r3
+    image: redis:8.8-alpine
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
+      interval: 1m30s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data3:/data
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+
+  redis4:
+    container_name: r4
+    image: redis:8.8-alpine
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli info persistence | grep -q '^loading:0'" ]
+      interval: 1m30s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
+    ports:
+      - "6382:6379"
+    volumes:
+      - redis_data4:/data
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
 
 volumes:
   mongo_data:
   mongo_config:
   redis_data1:
   redis_data2:
+  redis_data3:
+  redis_data4:

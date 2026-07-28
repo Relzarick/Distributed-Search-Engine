@@ -16,7 +16,7 @@ public final class CreateWorkers {
     private final int INDEXER_TC = ConfigLoader.getInt("indexer.threadCount", "2");
     private final int MONGO_TC = ConfigLoader.getInt("mongo.threadCount", "1");
 
-    private final BlockingQueue<QueueItem> mongoQueue = new LinkedBlockingQueue<>(20);
+    private final BlockingQueue<QueueItem> mongoQueue = new LinkedBlockingQueue<>(10);
     private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(20);
     private final BlockingQueue<QueueItem> redisQueue = new ArrayBlockingQueue<>(20);
 
