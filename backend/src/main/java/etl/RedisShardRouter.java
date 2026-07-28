@@ -27,7 +27,7 @@ public class RedisShardRouter implements AutoCloseable {
 
     public void routeToRedis(Object2ObjectOpenHashMap<String, IntArrayList> UniqueTokens, UUID[] UUIDs) throws InterruptedException {
         int estimatedSize = (int) Math.ceil((UniqueTokens.size() / (double) shards.length) * 1.33);
-        List<Map<String, List<UUID>>> batches = new ArrayList<>(shards.length);
+        List<Map<String, UUID[]>> batches = new ArrayList<>(shards.length);
 
         // Sizes the hashMap to the size of dict divided by n containers plus a little extra
         for (int i = 0; i < shards.length; i++)
@@ -39,11 +39,11 @@ public class RedisShardRouter implements AutoCloseable {
             IntArrayList indices = entry.getValue(); // Get docIndex
 
             // Contains the UUIDs that matches the token
-            List<UUID> mappedUUIDs = new ArrayList<>(indices.size());
+            UUID[] mappedUUIDs = new UUID[indices.size()];
 
             // Matches docIndex to UUIDs array
             for (int i = 0; i < indices.size(); i++)
-                mappedUUIDs.add(UUIDs[indices.getInt(i)]);
+                mappedUUIDs[i] = UUIDs[indices.getInt(i)];
 
             batches.get(shardInstance).put(entry.getKey(), mappedUUIDs);
         }
@@ -51,10 +51,11 @@ public class RedisShardRouter implements AutoCloseable {
         UniqueTokens.clear();
 
         for (int i = 0; i < shards.length; i++) {
-            Map<String, List<UUID>> subBatch = batches.get(i);
+            Map<String, UUID[]> subBatch = batches.get(i);
 
-            if (!subBatch.isEmpty())
+            if (!subBatch.isEmpty()) {
                 shards[i].queueBatch(subBatch);
+            }
         }
     }
 
@@ -151,7 +152,7 @@ public class RedisShardRouter implements AutoCloseable {
 
                     CommandQueue.Commands cmd = (CommandQueue.Commands) item;
 
-                    for (Map.Entry<String, List<UUID>> entry : cmd.batch().entrySet()) {
+                    for (Map.Entry<String, UUID[]> entry : cmd.batch().entrySet()) {
                         redis.set(entry.getKey(), entry.getValue());
                         count++;
 
@@ -168,7 +169,7 @@ public class RedisShardRouter implements AutoCloseable {
             }
         }
 
-        public void queueBatch(Map<String, List<UUID>> batch) throws InterruptedException {
+        public void queueBatch(Map<String, UUID[]> batch) throws InterruptedException {
             queue.put(new CommandQueue.Commands(batch));
         }
 
