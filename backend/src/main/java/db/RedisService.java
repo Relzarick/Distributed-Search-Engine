@@ -5,17 +5,14 @@ import io.lettuce.core.RedisFuture;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
-import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
-import io.lettuce.core.codec.ToByteBufEncoder;
 import io.lettuce.core.output.IntegerOutput;
 import io.lettuce.core.protocol.CommandArgs;
 import io.lettuce.core.protocol.CommandType;
-import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -24,7 +21,7 @@ import java.util.concurrent.TimeoutException;
 
 public final class RedisService implements Index {
     private final RedisClient client;
-    private static final UUIDCodecV2 CODEC = new UUIDCodecV2();
+    private static final UUIDCodec CODEC = new UUIDCodecV3();
 
     private final StatefulRedisConnection<String, UUID> connection;
     private final RedisAsyncCommands<String, UUID> async;
@@ -40,6 +37,7 @@ public final class RedisService implements Index {
     @Override
     public void set(String key, UUID[] docs) {
         final int CHUNK_SIZE = 1000;
+        List<UUID> docList = Arrays.asList(docs);
 
         // If it is small enough, send it directly to avoid chunking overhead
         if (docs.length <= CHUNK_SIZE) {
@@ -50,10 +48,9 @@ public final class RedisService implements Index {
 
         for (int i = 0; i < docs.length; i += CHUNK_SIZE) {
             int end = Math.min(docs.length, i + CHUNK_SIZE);
+            List<UUID> view = docList.subList(i, end);
 
-            UUID[] chunk = Arrays.copyOfRange(docs, i, end);
-
-            CommandArgs<String, UUID> args = new CommandArgs<>(CODEC).addKey(key).addValues(chunk);
+            CommandArgs<String, UUID> args = new CommandArgs<>(CODEC).addKey(key).addValues(view);
             async.dispatch(CommandType.SADD, new IntegerOutput<>(CODEC), args);
         }
     }
@@ -89,31 +86,25 @@ public final class RedisService implements Index {
         client.close();
     }
 
-    private static class UUIDCodecV2 implements ToByteBufEncoder<String, UUID>, RedisCodec<String, UUID> {
+    private static class UUIDCodecV3 implements UUIDCodec {
         private final StringCodec stringCodec = StringCodec.UTF8;
 
         @Override
-        public void encodeKey(String key, ByteBuf target) {
-            target.writeCharSequence(key, StandardCharsets.UTF_8);
+        public ByteBuffer encodeKey(String key) {
+            return stringCodec.encodeKey(key);
         }
 
         @Override
-        public void encodeValue(UUID value, ByteBuf target) {
-            if (value != null) {
-                target.writeLong(value.getMostSignificantBits());
-                target.writeLong(value.getLeastSignificantBits());
-            }
-        }
+        public ByteBuffer encodeValue(UUID value) {
+            if (value == null)
+                return ByteBuffer.allocate(0);
 
-        @Override
-        public int estimateSize(Object keyOrValue) {
-            if (keyOrValue instanceof UUID)
-                return 16;
+            ByteBuffer buffer = ByteBuffer.allocate(16);
+            buffer.putLong(value.getMostSignificantBits());
+            buffer.putLong(value.getLeastSignificantBits());
+            buffer.flip();
 
-            if (keyOrValue instanceof String)
-                return ((String) keyOrValue).length();
-
-            return 0;
+            return buffer;
         }
 
         @Override
@@ -128,17 +119,6 @@ public final class RedisService implements Index {
 
             return new UUID(bytes.getLong(), bytes.getLong());
         }
-
-        @Override
-        public ByteBuffer encodeKey(String key) {
-            return null;
-        }
-
-        @Override
-        public ByteBuffer encodeValue(UUID value) {
-            return null;
-        }
-
     }
 
 }

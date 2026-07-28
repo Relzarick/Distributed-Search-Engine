@@ -50,9 +50,8 @@ public final class InvertedIndexer {
 
             // For each token, check if it already exists in dict, then add docIndex
             // IntArrayList contains an array of docIndexes
-            for (String token : uniqueTokensPerDoc) {
+            for (String token : uniqueTokensPerDoc)
                 uniqueTokens.computeIfAbsent(token, k -> new IntArrayList()).add(docIndex);
-            }
 
             docIndex++;
         }
