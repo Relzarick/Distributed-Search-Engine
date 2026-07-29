@@ -11,7 +11,9 @@ import com.mongodb.client.model.InsertManyOptions;
 import org.bson.BsonDocument;
 import org.bson.UuidRepresentation;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public final class Database implements Repository {
     private final MongoClient client;
@@ -21,6 +23,7 @@ public final class Database implements Repository {
     private static final InsertManyOptions UNORDERED = new InsertManyOptions().ordered(false);
     private static final String DATABASENAME = "mongrel-db";
     private static final String COLLECTION = "col";
+    private static final String id = "_id";
 
     public Database() {
         MongoClientSettings settings = MongoClientSettings.builder()
@@ -35,9 +38,13 @@ public final class Database implements Repository {
     }
 
     @Override
-    public BsonDocument fetch(String id) {
-        return collection.find(Filters.eq("_id", id)).first();
-//         should make this fetch a bunch at once?
+    public BsonDocument fetch(UUID val) {
+        return collection.find(Filters.eq(id, val)).first();
+    }
+
+    @Override // thhis should convert to uuid
+    public List<BsonDocument> fetchMany(List<UUID> val) {
+        return collection.find(Filters.in(id, val)).into(new ArrayList<>());
     }
 
     @Override

@@ -64,7 +64,6 @@ public final class CsvParser {
      */
     public void parseDataTo(BlockingQueue<QueueItem> queue1, BlockingQueue<QueueItem> queue2, int start, int end) throws IOException, InterruptedException {
         try (IndexedCsvReader<BsonDocument> reader = IndexedCsvReader.builder().index(index).pageSize(CAPACITY).build(new BsonDocHandler(headers), PATH)) {
-
             for (int i = start; i < end; i++) { // Page loop
                 List<BsonDocument> batch = reader.readPage(i);
 

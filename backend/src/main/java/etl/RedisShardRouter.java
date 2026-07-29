@@ -13,10 +13,9 @@ public class RedisShardRouter implements AutoCloseable {
 
     private static final double JUMP_CONSTANT = 2147483648.0d; // (double) (1L << 31)
 
-    // MurmurHash2 64-bit constants
-    private static final long M = 0xc6a4a7935bd1e995L;
-    private static final int R = 47;
-    private static final long SEED = 0x1234567890ABCDEFL; // Arbitrary constant seed
+    // FNV-1a 64-bit constants
+    private static final long FNV_OFFSET_BASIS = 0xcbf29ce484222325L;
+    private static final long FNV_PRIME = 0x100000001b3L;
 
     public RedisShardRouter() {
         shards = new Writer[]{
@@ -38,20 +37,20 @@ public class RedisShardRouter implements AutoCloseable {
         // Loops each token
         for (Map.Entry<String, IntArrayList> entry : UniqueTokens.entrySet()) {
             int shardInstance = hash(entry.getKey()); // Hashing based on token
-            IntArrayList indices = entry.getValue(); // Get docIndex
 
-            // Contains the UUIDs that matches the token
-            UUID[] mappedUUIDs = new UUID[indices.size()];
+            IntArrayList docIndexes = entry.getValue(); // Get docIndex
+            UUID[] mappedUUIDs = new UUID[docIndexes.size()];  // Documents that contains the token
 
             // Matches docIndex to UUIDs array
-            for (int i = 0; i < indices.size(); i++)
-                mappedUUIDs[i] = UUIDs[indices.getInt(i)];
+            for (int i = 0; i < docIndexes.size(); i++)
+                mappedUUIDs[i] = UUIDs[docIndexes.getInt(i)];
 
             batches.get(shardInstance).put(entry.getKey(), mappedUUIDs);
         }
 
-        UniqueTokens.clear();
+        UniqueTokens.clear(); // Clearing because its already copied to batches
 
+        // Routes the hashed token into their respective shards
         for (int i = 0; i < shards.length; i++) {
             Map<String, UUID[]> subBatch = batches.get(i);
 
@@ -62,7 +61,7 @@ public class RedisShardRouter implements AutoCloseable {
 
     // AI magic algo
     private int hash(String key) {
-        long keyHash = murmur2_64(key);
+        long keyHash = fastHash64(key);
         return jumpConsistentHash(keyHash, shards.length);
     }
 
@@ -78,45 +77,21 @@ public class RedisShardRouter implements AutoCloseable {
         return (int) b;
     }
 
-    private static long murmur2_64(String text) {
-        int len = text.length();
-        long h = SEED ^ (len * M);
+    private static long fastHash64(String text) {
+        long hash = FNV_OFFSET_BASIS;
 
-        int i = 0;
-        // Process 4 characters (64 bits) at a time
-        for (; i <= len - 4; i += 4) {
-            long k = ((long) text.charAt(i) << 48) |
-                    ((long) text.charAt(i + 1) << 32) |
-                    ((long) text.charAt(i + 2) << 16) |
-                    ((long) text.charAt(i + 3));
-
-            k *= M;
-            k ^= k >>> R;
-            k *= M;
-
-            h ^= k;
-            h *= M;
+        for (int i = 0, len = text.length(); i < len; i++) {
+            hash ^= text.charAt(i);
+            hash *= FNV_PRIME;
         }
 
-        // Handle the remaining 1 to 3 characters using a fall-through switch
-        switch (len - i) {
-            case 3:
-                h ^= ((long) text.charAt(i + 2)) << 16;
-                // fall through
-            case 2:
-                h ^= ((long) text.charAt(i + 1)) << 32;
-                // fall through
-            case 1:
-                h ^= ((long) text.charAt(i)) << 48;
-                h *= M;
-        }
+        hash ^= hash >>> 33;
+        hash *= 0xff51afd7ed558ccdL;
+        hash ^= hash >>> 33;
+        hash *= 0xc4ceb9fe1a85ec53L;
+        hash ^= hash >>> 33;
 
-        // Final avalanche to ensure the last bits are heavily scrambled
-        h ^= h >>> R;
-        h *= M;
-        h ^= h >>> R;
-
-        return h;
+        return hash;
     }
 
     @Override

@@ -37,7 +37,7 @@ public final class InvertedIndexer {
             // Mapping the UUIDs to an array
             docIds[docIndex] = doc.getBinary("_id").asUuid();
 
-            uniqueTokensPerDoc.clear();
+            uniqueTokensPerDoc.clear(); // clear so next batch is clean
 
             // This is looping each field in the individual docuemnts
             for (Map.Entry<String, BsonValue> field : doc.entrySet()) {
@@ -48,8 +48,7 @@ public final class InvertedIndexer {
                     tk.tokenizeInto(str.getValue(), uniqueTokensPerDoc);
             }
 
-            // For each token, check if it already exists in dict, then add docIndex
-            // IntArrayList contains an array of docIndexes
+            // Maps ids to tokens from that document
             for (String token : uniqueTokensPerDoc)
                 uniqueTokens.computeIfAbsent(token, k -> new IntArrayList()).add(docIndex);
 
