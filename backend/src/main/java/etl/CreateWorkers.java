@@ -1,9 +1,10 @@
 package etl;
 
 import bootstrap.ConfigLoader;
-import db.Repository;
 import etl.parser.CsvParser;
 import indexer.InvertedIndexer;
+import mongo.Repository;
+import redis.RedisShardRouter;
 
 import java.io.IOException;
 import java.util.concurrent.*;

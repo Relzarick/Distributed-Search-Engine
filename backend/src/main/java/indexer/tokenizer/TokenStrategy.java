@@ -7,4 +7,6 @@ import java.util.Set;
  */
 public interface TokenStrategy {
     void toTokens(String input, Set<String> list);
+
+    Set<String> toTokens(String input);
 }

@@ -2,8 +2,8 @@ import bootstrap.AppSetup;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import db.Database;
-import db.Repository;
+import mongo.Database;
+import mongo.Repository;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,6 +18,8 @@ public class Server {
         try {
             if (!db.ifExists())
                 AppSetup.run(db);
+
+            SearchService search = new SearchService(db);
 
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 

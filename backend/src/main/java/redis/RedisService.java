@@ -1,4 +1,4 @@
-package db;
+package redis;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;

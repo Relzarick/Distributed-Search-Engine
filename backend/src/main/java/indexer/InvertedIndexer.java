@@ -2,7 +2,6 @@ package indexer;
 
 import etl.QueueItem;
 import indexer.tokenizer.TokenStrategy;
-import indexer.tokenizer.Tokenizer;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -12,14 +11,15 @@ import org.bson.BsonValue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 
 public final class InvertedIndexer {
-    private final Tokenizer tk;
+    private final TokenStrategy tk;
 
     public InvertedIndexer(TokenStrategy strategy) {
-        tk = new Tokenizer(strategy);
+        tk = strategy;
     }
 
     public void tokenizeToQueue(QueueItem.DocumentBatch from, BlockingQueue<QueueItem> to) throws InterruptedException {
@@ -45,7 +45,7 @@ public final class InvertedIndexer {
                     continue;
 
                 if (field.getValue() instanceof BsonString str)
-                    tk.tokenizeInto(str.getValue(), uniqueTokensPerDoc);
+                    tk.toTokens(str.getValue(), uniqueTokensPerDoc);
             }
 
             // Maps ids to tokens from that document
@@ -56,6 +56,10 @@ public final class InvertedIndexer {
         }
 
         to.put(new QueueItem.IndexerBatch(uniqueTokens, docIds));
+    }
+
+    public Set<String> tokenizeKeyWords(String input) {
+        return tk.toTokens(input);
     }
 
 }

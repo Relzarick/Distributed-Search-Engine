@@ -1,9 +1,10 @@
-package db;
+package mongo;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.BsonDocument;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -12,7 +13,7 @@ import java.util.UUID;
 public interface Repository {
     BsonDocument fetch(UUID val);
 
-    List<BsonDocument> fetchMany(List<UUID> val);
+    List<BsonDocument> fetchMany(Set<UUID> val);
 
     void insert(List<BsonDocument> batch);
 

@@ -52,6 +52,11 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
 
     }
 
+    @Override
+    public Set<String> toTokens(String input) {
+        return Set.of();
+    }
+
     private boolean isNotValid(char c) {
         return (c < 'a' || c > 'z') && (c < 'A' || c > 'Z');
     }

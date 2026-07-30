@@ -1,4 +1,4 @@
-package db;
+package mongo;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -13,6 +13,7 @@ import org.bson.UuidRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public final class Database implements Repository {
@@ -43,7 +44,7 @@ public final class Database implements Repository {
     }
 
     @Override // thhis should convert to uuid
-    public List<BsonDocument> fetchMany(List<UUID> val) {
+    public List<BsonDocument> fetchMany(Set<UUID> val) {
         return collection.find(Filters.in(id, val)).into(new ArrayList<>());
     }
 

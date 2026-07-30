@@ -1,4 +1,4 @@
-package db;
+package redis;
 
 import java.util.Set;
 import java.util.UUID;
