@@ -1,3 +1,5 @@
+package search;
+
 import indexer.InvertedIndexer;
 import mongo.Repository;
 import redis.RedisQueryService;

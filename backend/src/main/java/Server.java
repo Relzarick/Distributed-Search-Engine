@@ -1,5 +1,4 @@
 import bootstrap.AppSetup;
-import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import indexer.InvertedIndexer;
@@ -8,11 +7,11 @@ import mongo.Database;
 import mongo.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import search.SearchHandler;
+import search.SearchService;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
 public class Server {
@@ -29,7 +28,7 @@ public class Server {
             SearchService search = new SearchService(db, indexer);
 
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
-            start(server, new BaseHandler());
+            start(server, new SearchHandler());
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 server.stop(0);
@@ -55,17 +54,4 @@ public class Server {
         logger.info("Server is running on http://localhost:8080");
     }
 
-    private static class BaseHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            byte[] bytes = "testing".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, bytes.length);
-
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
-            }
-
-        }
-
-    }
 }
