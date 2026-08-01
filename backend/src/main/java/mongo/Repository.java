@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface Repository {
     BsonDocument fetch(UUID val);
 
-    List<BsonDocument> fetchMany(Set<UUID> val);
+    DocumentResults fetchMany(Set<UUID> val);
 
     void insert(List<BsonDocument> batch);
 

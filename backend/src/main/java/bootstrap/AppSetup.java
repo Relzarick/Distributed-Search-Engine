@@ -3,7 +3,6 @@ package bootstrap;
 import etl.CreateWorkers;
 import etl.parser.CsvParser;
 import indexer.InvertedIndexer;
-import indexer.tokenizer.StemTokenization;
 import logging.StopWatch;
 import mongo.Repository;
 import redis.RedisShardRouter;
@@ -18,7 +17,7 @@ public final class AppSetup {
      * Handles setup logic including, parsing, tokenizing and ingestion to mongo and redis.
      *
      */
-    public static void run(Repository db) throws IOException {
+    public static void run(Repository db, InvertedIndexer indexer) throws IOException {
         StopWatch parse = new StopWatch("Parsing pipeline");
 
         try {
@@ -27,7 +26,6 @@ public final class AppSetup {
             index.stop();
 
             CreateWorkers workers = new CreateWorkers();
-            InvertedIndexer indexer = new InvertedIndexer(new StemTokenization());
 
             try (RedisShardRouter router = new RedisShardRouter()) {
                 workers.run(parser, indexer, db, router);

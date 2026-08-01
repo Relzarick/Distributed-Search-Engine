@@ -43,9 +43,9 @@ public final class Database implements Repository {
         return collection.find(Filters.eq(id, val)).first();
     }
 
-    @Override // thhis should convert to uuid
-    public List<BsonDocument> fetchMany(Set<UUID> val) {
-        return collection.find(Filters.in(id, val)).into(new ArrayList<>());
+    @Override
+    public DocumentResults fetchMany(Set<UUID> val) {
+        return new DocumentResults(collection.find(Filters.in(id, val)).into(new ArrayList<>()));
     }
 
     @Override

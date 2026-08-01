@@ -1,5 +1,6 @@
 package redis;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -17,14 +18,20 @@ public class RedisQueryService implements AutoCloseable {
         };
     }
 
-    public Set<UUID> fetchFromRedis(Set<String> token) {
-        int instance = TokenHasher.hash(token, shards.length); // this has to loop
+    public Set<UUID> fetchFromRedis(Set<String> tokens) {
+        Set<UUID> uuids = new HashSet<>();
 
-        try {
-            return shards[instance].retrieve(token);
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
+        for (String token : tokens) {
+            int instance = TokenHasher.hash(token, shards.length);
+
+            try {
+                uuids.addAll(shards[instance].retrieve(token));
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException("Failed to retrieve token: " + token, e);
+            }
         }
+
+        return uuids;
     }
 
     @Override

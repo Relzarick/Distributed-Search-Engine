@@ -2,6 +2,8 @@ import bootstrap.AppSetup;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import indexer.InvertedIndexer;
+import indexer.tokenizer.StemTokenization;
 import mongo.Database;
 import mongo.Repository;
 
@@ -13,13 +15,14 @@ import java.util.concurrent.Executors;
 
 public class Server {
     public static void main(String[] args) {
-        Repository db = new Database();
-
         try {
-            if (!db.ifExists())
-                AppSetup.run(db);
+            Repository db = new Database();
+            InvertedIndexer indexer = new InvertedIndexer(new StemTokenization());
 
-            SearchService search = new SearchService(db);
+            if (!db.ifExists())
+                AppSetup.run(db, indexer);
+
+            SearchService search = new SearchService(db, indexer);
 
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 

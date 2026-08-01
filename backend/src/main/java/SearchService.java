@@ -1,29 +1,29 @@
 import indexer.InvertedIndexer;
-import indexer.tokenizer.StemTokenization;
 import mongo.Repository;
-import org.bson.BsonDocument;
 import redis.RedisQueryService;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public class SearchService {
     private final Repository mongo;
     private final RedisQueryService query = new RedisQueryService();
-    private final InvertedIndexer indexer = new InvertedIndexer(new StemTokenization());
+    private final InvertedIndexer indexer;
 
-    public SearchService(Repository db) {
+    public SearchService(Repository db, InvertedIndexer idx) {
         mongo = db;
+        indexer = idx;
     }
 
-    public void search(String input) {
+    public String find(String input) {
         Set<String> cleanedInput = indexer.tokenizeKeyWords(input);
 
-        Set<UUID> uuids = query.fetchFromRedis(cleanedInput);
-        List<BsonDocument> docs = mongo.fetchMany(uuids);
+        if (cleanedInput == null || cleanedInput.isEmpty())
+            return input;
 
-        // return as json
+        Set<UUID> uuids = query.fetchFromRedis(cleanedInput);
+
+        return mongo.fetchMany(uuids).jsonify();
     }
 
 }
