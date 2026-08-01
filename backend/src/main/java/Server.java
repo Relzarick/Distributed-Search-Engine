@@ -6,6 +6,8 @@ import indexer.InvertedIndexer;
 import indexer.tokenizer.StemTokenization;
 import mongo.Database;
 import mongo.Repository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,6 +16,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
 public class Server {
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
+
     public static void main(String[] args) {
         try {
             Repository db = new Database();
@@ -25,17 +29,30 @@ public class Server {
             SearchService search = new SearchService(db, indexer);
 
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+            start(server, new BaseHandler());
 
-            server.createContext("/", new BaseHandler());
-            server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
-            server.start();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                server.stop(0);
 
-            System.out.println("Server is running on http://localhost:8080");
+                try {
+                    db.close();
+                    logger.info("Database closed.");
+                } catch (Exception e) {
+                    logger.error("Error while closing database: {}", e.getMessage());
+                }
+            }));
+
         } catch (RuntimeException | IOException e) {
-            System.err.println("IO Error can't start the server");
+            logger.error("IO Error can't start the server.");
         }
+    }
 
-        // close db when jvm exits
+    private static void start(HttpServer server, HttpHandler handler) {
+        server.createContext("/", handler);
+        server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+        server.start();
+
+        logger.info("Server is running on http://localhost:8080");
     }
 
     private static class BaseHandler implements HttpHandler {

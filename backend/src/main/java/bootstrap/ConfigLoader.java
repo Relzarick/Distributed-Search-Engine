@@ -22,8 +22,7 @@ public final class ConfigLoader {
     }
 
     public static int getInt(String property, String fallBack) {
-        String value = CACHE.getProperty(property, fallBack);
-        return Integer.parseInt(value);
+        return Integer.parseInt(CACHE.getProperty(property, fallBack));
     }
 
     public static String getStr(String property, String fallBack) {

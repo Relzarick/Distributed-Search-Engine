@@ -4,6 +4,8 @@ import bootstrap.ConfigLoader;
 import etl.parser.CsvParser;
 import indexer.InvertedIndexer;
 import mongo.Repository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.RedisShardRouter;
 
 import java.io.IOException;
@@ -13,9 +15,12 @@ import java.util.concurrent.*;
  * Used to insert parsed data into the databases
  */
 public final class CreateWorkers {
-    private final int PARSER_TC = ConfigLoader.getInt("parser.threadCount", "2");
-    private final int INDEXER_TC = ConfigLoader.getInt("indexer.threadCount", "2");
+    private static final Logger logger = LoggerFactory.getLogger(CreateWorkers.class);
+
+    private final int PARSER_TC = ConfigLoader.getInt("parser.threadCount", "1");
+    private final int INDEXER_TC = ConfigLoader.getInt("indexer.threadCount", "1");
     private final int MONGO_TC = ConfigLoader.getInt("mongo.threadCount", "1");
+    private final int REDIS_TC = ConfigLoader.getInt("redis.threadCount", "1");
 
     private final BlockingQueue<QueueItem> mongoQueue = new LinkedBlockingQueue<>(10);
     private final BlockingQueue<QueueItem> indexerQueue = new ArrayBlockingQueue<>(20);
@@ -24,7 +29,7 @@ public final class CreateWorkers {
     private final ExecutorService parserThreadPool = Executors.newFixedThreadPool(PARSER_TC);
     private final ExecutorService indexerThreadPool = Executors.newFixedThreadPool(INDEXER_TC);
     private final ExecutorService mongoThreadPool = Executors.newFixedThreadPool(MONGO_TC);
-    private final ExecutorService redisThreadPool = Executors.newSingleThreadExecutor();
+    private final ExecutorService redisThreadPool = Executors.newFixedThreadPool(REDIS_TC);
 
     private record Target(BlockingQueue<QueueItem> queue, int pillCount) {
     }
@@ -112,6 +117,7 @@ public final class CreateWorkers {
      */
     private CompletableFuture<Void> runConsumers(Repository db, RedisShardRouter router) {
         CompletableFuture<?>[] mongoFuturesArray = new CompletableFuture<?>[MONGO_TC];
+        CompletableFuture<?>[] redisFuturesArray = new CompletableFuture<?>[REDIS_TC];
 
         for (int i = 0; i < MONGO_TC; i++) {
             mongoFuturesArray[i] = CompletableFuture.runAsync(() -> {
@@ -136,31 +142,33 @@ public final class CreateWorkers {
             }, mongoThreadPool);
         }
 
-        CompletableFuture<?> redisFuture = CompletableFuture.runAsync(() -> {
-            try {
-                while (true) {
-                    QueueItem item = redisQueue.take();
+        for (int i = 0; i < REDIS_TC; i++) {
+            redisFuturesArray[i] = CompletableFuture.runAsync(() -> {
+                try {
+                    while (true) {
+                        QueueItem item = redisQueue.take();
 
-                    if (item instanceof QueueItem.PoisonPill)
-                        break;
+                        if (item instanceof QueueItem.PoisonPill)
+                            break;
 
-                    QueueItem.IndexerBatch batch = (QueueItem.IndexerBatch) item;
+                        QueueItem.IndexerBatch batch = (QueueItem.IndexerBatch) item;
 
-                    router.routeToRedis(batch.dict(), batch.docIds());
+                        router.routeToRedis(batch.dict(), batch.docIds());
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    abortIngestion("Redis consumer interrupted");
+                    throw new CompletionException(e);
+                } catch (Exception e) {
+                    logger.error("Failed to process batch. Reason: {}", e.getMessage());
+
+                    abortIngestion("Redis consumer failed: " + e);
+                    throw new CompletionException(e);
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                abortIngestion("Redis consumer interrupted");
-                throw new CompletionException(e);
-            } catch (Exception e) {
-                System.err.println(Thread.currentThread() + " Failed to process batch. Reason: " + e.getMessage());
+            }, redisThreadPool);
+        }
 
-                abortIngestion("Redis consumer failed: " + e);
-                throw new CompletionException(e);
-            }
-        }, redisThreadPool);
-
-        return futuresBatched(mongoFuturesArray, redisFuture);
+        return futuresBatched(mongoFuturesArray, redisFuturesArray);
     }
 
     /**
@@ -170,7 +178,7 @@ public final class CreateWorkers {
      * @param r Redis Futures
      * @return A super wrapped completable future.
      */
-    private CompletableFuture<Void> futuresBatched(CompletableFuture<?>[] m, CompletableFuture<?> r) {
+    private CompletableFuture<Void> futuresBatched(CompletableFuture<?>[] m, CompletableFuture<?>[] r) {
         CompletableFuture<Void> nestedRedisFutures = CompletableFuture.allOf(r);
         CompletableFuture<Void> nestedMongofutures = CompletableFuture.allOf(m);
 
@@ -181,7 +189,7 @@ public final class CreateWorkers {
     }
 
     private void abortIngestion(String reason) {
-        System.err.println("Aborting ingestion: " + reason);
+        logger.error("Aborting ingestion: {}", reason);
 
         parserThreadPool.shutdownNow();
         indexerThreadPool.shutdownNow();
