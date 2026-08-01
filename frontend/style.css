@@ -12,31 +12,31 @@ html {
 }
 
 :root {
-  --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --border-color: #cbd5e1;
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
+  --bg-main: #e6e9ef;
+  --bg-card: #eff1f5;
+  --text-primary: #4c4f69;
+  --text-secondary: #6c6f85;
+  --border-color: #bcc0cc;
+  --color-accent: #8839ef;
+  --color-accent-hover: #722ebc;
   --radius: 0.6rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-main: #0b0f17;
-    --bg-card: #151c28;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --border-color: #26334d;
-    --color-accent: #3b82f6;
-    --color-accent-hover: #60a5fa;
+    --bg-main: #1e1e2e;
+    --bg-card: #313244;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --border-color: #45475a;
+    --color-accent: #cba6f7;
+    --color-accent-hover: #dcbdfa;
   }
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   background-color: var(--bg-main);
   color: var(--text-primary);

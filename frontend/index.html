@@ -4,27 +4,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Distributed Search Engine</title>
+  <title>Lattice | Distributed Search</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="search.css">
 </head>
 
 <body>
-  <div class="header">
-    <h1>Insert Cool Title</h1>
-  </div>
+  <header class="header">
+    <h1>Lattice</h1>
+    <p class="subtitle">Distributed Search Engine</p>
+  </header>
 
-  <div id="search-form" class="search-container">
-    <form class="search-form">
-      <input type="search" name="query" placeholder="Search...">
-      <button type="submit">Search</button>
+  <main class="search-container">
+    <form class="search-form" role="search">
+      <input type="search" name="query" placeholder="Search..." aria-label="Search query">
     </form>
 
-    <div class="output">
+    <section class="output" aria-live="polite">
 
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script src="index.js"></script>
 </body>
