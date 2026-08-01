@@ -45,7 +45,7 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
             if (wordStart < wordEnd) {
                 String token = new String(chars, wordStart, wordEnd - wordStart).toLowerCase();
 
-                if (!STOP_WORDS.contains(token))
+                if (!STOP_WORDS.contains(new CharSeq(token)))
                     list.add(token);
             }
         }

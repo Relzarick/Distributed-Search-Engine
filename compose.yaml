@@ -24,6 +24,17 @@ services:
       redis4:
         condition: service_healthy
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: tunnel
+    command: tunnel --no-autoupdate run
+    restart: unless-stopped
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     container_name: mongrel
     image: mongo:8.3

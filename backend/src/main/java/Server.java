@@ -47,7 +47,7 @@ public class Server {
     }
 
     private static void start(HttpServer server, HttpHandler handler) {
-        server.createContext("/", handler);
+        server.createContext("/search", handler);
         server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.start();
 
