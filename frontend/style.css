@@ -20,6 +20,7 @@ html {
   --color-accent: #8839ef;
   --color-accent-hover: #722ebc;
   --radius: 0.6rem;
+  --theme-transition: 0.8s ease-out;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,9 +39,14 @@ body {
   margin: 0;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+  font-family: "Sorts Mill Goudy", serif;
   background-color: var(--bg-main);
   color: var(--text-primary);
   font-size: 1.8rem;
+
+  transition:
+    background-color var(--theme-transition),
+    color var(--theme-transition);
 
   display: flex;
   flex-direction: column;
@@ -56,4 +62,8 @@ input,
 button,
 select {
   font: inherit;
+  transition:
+    background-color var(--theme-transition),
+    color var(--theme-transition),
+    border-color var(--theme-transition);
 }
