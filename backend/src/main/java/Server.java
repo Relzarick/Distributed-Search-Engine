@@ -28,7 +28,7 @@ public class Server {
             SearchService search = new SearchService(db, indexer);
 
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
-            start(server, new SearchHandler());
+            start(server, new SearchHandler(search));
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 server.stop(0);
@@ -51,7 +51,7 @@ public class Server {
         server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.start();
 
-        logger.info("Server is running on http://localhost:8080");
+        logger.info("Server is running on http://wretch:8080");
     }
 
 }
