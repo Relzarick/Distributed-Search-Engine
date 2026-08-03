@@ -1,17 +1,15 @@
 const form = document.querySelector(".search-form");
 const input = form.querySelector('input[name="query"]');
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
   const query = input.value.trim();
 
   if (!query) return;
 
   try {
-    const res = await fetch(
-      `https://service.relzarick.com/search?q=${encodeURIComponent(query)}`,
-    );
+    const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
 
     if (!res.ok) throw new Error("Request failed");
 
@@ -19,6 +17,6 @@ form.addEventListener("submit", async (event) => {
 
     console.log(data); // remove
   } catch (error) {
-    console.log;
+    console.log("Search error:", error);
   }
 });
