@@ -1,0 +1,35 @@
+.output {
+  display: flex;
+  flex-direction: column;
+  gap: 2.4rem;
+  margin-block-start: 4.8rem;
+  width: 100%;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: 1.6rem;
+  padding: 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.field p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
