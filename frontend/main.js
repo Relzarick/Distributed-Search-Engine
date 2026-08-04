@@ -27,6 +27,11 @@ class SearchTable {
       this.toggleFilterMenu(),
     );
     document.addEventListener("click", (e) => this.handleOutsideClick(e));
+
+    this.elements.body.addEventListener("click", (e) => {
+      const td = e.target.closest("td.expandable");
+      if (td) td.querySelector(".cell-content").classList.toggle("expanded");
+    });
   }
 
   async handleSubmit(e) {
@@ -129,14 +134,30 @@ class SearchTable {
 
       for (const header of this.state.headers) {
         if (!this.state.visibleHeaders.has(header)) continue;
+
         const td = document.createElement("td");
-        td.textContent = row[header] ?? "";
+        const content = document.createElement("div");
+        content.className = "cell-content";
+        content.textContent = String(row[header] ?? "");
+
+        td.append(content);
         tr.append(td);
       }
+
       fragment.append(tr);
     }
 
     this.elements.body.replaceChildren(fragment);
+    this.markTruncatedCells();
+  }
+
+  markTruncatedCells() {
+    this.elements.body.querySelectorAll(".cell-content").forEach((content) => {
+      content.parentElement.classList.toggle(
+        "expandable",
+        content.scrollHeight > content.clientHeight,
+      );
+    });
   }
 
   toggleFilterMenu() {
@@ -155,7 +176,4 @@ class SearchTable {
   }
 }
 
-// Initialize when DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  new SearchTable();
-});
+new SearchTable();

@@ -1,6 +1,6 @@
 # Distributed Search Engine
 
-Visit the site at: https://search-engine.relzarick.workers.dev/
+Visit the site at: https://skopos.relzarick.com/
 
 ## Setup
 

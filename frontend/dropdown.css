@@ -1,0 +1,52 @@
+/* =========================================
+   DROPDOWN & FILTERS
+   ========================================= */
+.column-filter {
+  position: relative;
+}
+
+.filter-menu {
+  position: absolute;
+  top: calc(100% + 0.8rem);
+  right: 0;
+  z-index: 10;
+
+  display: none;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 24rem;
+  max-height: 40vh;
+  padding: 1.6rem;
+  overflow-y: auto;
+
+  background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-main) 40%, transparent);
+  transition: all var(--theme-transition);
+}
+
+.filter-menu.show {
+  display: flex;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+
+  font-size: 1.6rem;
+  text-transform: capitalize;
+
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: color var(--theme-transition);
+}
+
+.filter-label input[type="checkbox"] {
+  width: 1.8rem;
+  height: 1.8rem;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
