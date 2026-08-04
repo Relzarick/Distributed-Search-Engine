@@ -3,7 +3,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/search") {
-      const targetUrl = `https://service.relzarick.com/search${url.search}`;
+      const targetUrl = `https://www.service.relzarick.com/search${url.search}`;
 
       const newHeaders = new Headers(request.headers);
       newHeaders.delete("Host");

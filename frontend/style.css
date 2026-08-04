@@ -20,7 +20,7 @@ html {
   --color-accent: #8839ef;
   --color-accent-hover: #722ebc;
   --radius: 0.6rem;
-  --theme-transition: 0.8s ease-out;
+  --theme-transition: 0.7s ease-out;
 }
 
 @media (prefers-color-scheme: dark) {

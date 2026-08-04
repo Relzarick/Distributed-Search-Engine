@@ -15,7 +15,7 @@
 
 <body>
   <header class="header">
-    <h1>Lattice</h1>
+    <h1>Skopos</h1>
     <p class="subtitle">Distributed Search Engine</p>
   </header>
 
@@ -24,12 +24,30 @@
       <input type="search" name="query" placeholder="Search..." aria-label="Search query">
     </form>
 
-    <section class="output" aria-live="polite">
+    <div class="table-container" id="table-container" style="display: none;">
+      <div class="table-toolbar">
+        <div class="column-filter">
+          <button type="button" id="filter-btn" class="btn borderless-btn" aria-haspopup="menu" aria-expanded="false">
+            <span id="filter-count"></span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <div id="filter-menu" class="filter-menu" role="menu"></div>
+        </div>
+      </div>
 
-    </section>
+      <div class="table-wrapper">
+        <table class="output-table" aria-live="polite">
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
-  <script src="script.js"></script>
+  <script src="main.js"></script>
 </body>
 
 </html>

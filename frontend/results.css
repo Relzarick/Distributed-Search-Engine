@@ -1,35 +1,124 @@
-.output {
+.table-container {
   display: flex;
   flex-direction: column;
-  gap: 2.4rem;
+  gap: 1.6rem;
   margin-block-start: 4.8rem;
-  width: 100%;
+  width: 90dvw;
+  max-width: 140rem;
+  align-self: center;
 }
 
-.result {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
-  gap: 1.6rem;
-  padding: 2rem;
-  background: var(--bg-card);
+.table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.6rem;
+  background-color: var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 1.6rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--theme-transition);
+}
+
+.btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 8%, var(--bg-card));
+}
+
+.column-filter {
+  position: relative;
+}
+
+.filter-menu {
+  position: absolute;
+  top: calc(100% + 0.8rem);
+  right: 0;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-}
-
-.field {
-  display: flex;
+  padding: 1.6rem;
+  display: none;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 1.2rem;
+  min-width: 24rem;
+  max-height: 40vh;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-main) 40%, transparent);
+  transition: all var(--theme-transition);
 }
 
-.field h3 {
-  margin: 0;
-  font-size: 1.4rem;
-  color: var(--text-secondary);
+.filter-menu.show {
+  display: flex;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  cursor: pointer;
   text-transform: capitalize;
+  transition: color var(--theme-transition);
 }
 
-.field p {
-  margin: 0;
-  overflow-wrap: anywhere;
+.filter-label input[type="checkbox"] {
+  accent-color: var(--color-accent);
+  width: 1.8rem;
+  height: 1.8rem;
+  cursor: pointer;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: var(--radius);
+  background-color: var(--bg-card);
+  transition: all var(--theme-transition);
+}
+
+.output-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  table-layout: auto;
+}
+
+.output-table th,
+.output-table td {
+  padding: 1.8rem 2.4rem;
+  font-size: 1.8rem;
+  white-space: nowrap;
+  transition: all var(--theme-transition);
+}
+
+.output-table th {
+  background-color: color-mix(in srgb, var(--bg-main) 60%, var(--bg-card));
+  color: var(--text-secondary);
+  font-weight: 700;
+  text-transform: capitalize;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.output-table td {
+  color: var(--text-primary);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--border-color) 40%, transparent);
+}
+
+.output-table tbody tr:last-child td {
+  border-bottom: none;
 }
