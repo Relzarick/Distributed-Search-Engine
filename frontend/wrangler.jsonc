@@ -2,8 +2,13 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "search-engine",
   "main": "src/index.js",
-  "compatibility_date": "2026-07-27",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-08-04",
+  "routes": [
+    {
+      "pattern": "lattice.relzarick.com",
+      "custom_domain": true,
+    },
+  ],
   "assets": {
     "directory": ".",
   },
