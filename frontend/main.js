@@ -60,7 +60,10 @@ class SearchTable {
       return;
     }
 
-    this.state.headers = Object.keys(this.state.data[0]);
+    // Filter out the _id key so it's ignored
+    this.state.headers = Object.keys(this.state.data[0]).filter(
+      (key) => key !== "_id",
+    );
     this.state.visibleHeaders = new Set(this.state.headers);
     this.elements.container.style.display = "flex";
 
