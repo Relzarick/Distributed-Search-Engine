@@ -63,7 +63,7 @@
     padding: 1.7rem 2rem 1.7rem 5.4rem;
     background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
     border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
-    border-radius: 1rem;
+    border-radius: var(--radius);
     color: var(--text-primary);
     font-size: 2rem;
     outline: none;

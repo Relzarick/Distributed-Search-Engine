@@ -1,6 +1,3 @@
-/* =========================================
-   DROPDOWN & FILTERS
-   ========================================= */
 .column-filter {
   position: relative;
 }
@@ -22,7 +19,7 @@
   background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
   backdrop-filter: blur(8px);
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
-  border-radius: 1rem;
+  border-radius: var(--radius);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-main) 40%, transparent);
   transition: all var(--theme-transition);
 }

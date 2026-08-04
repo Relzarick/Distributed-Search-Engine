@@ -75,7 +75,7 @@
   color: var(--text-secondary);
   background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
-  border-radius: 1rem;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--theme-transition);
 }
@@ -117,6 +117,14 @@
   color: var(--text-secondary);
   background-color: color-mix(in srgb, var(--bg-main) 60%, var(--bg-card));
   border-bottom: 2px solid var(--border-color);
+}
+
+.output-table th[draggable="true"] {
+  cursor: grab;
+}
+
+.output-table th[draggable="true"]:active {
+  cursor: grabbing;
 }
 
 .output-table td {
@@ -166,7 +174,7 @@ td.expandable {
   justify-content: flex-end;
   align-items: center;
   gap: 0.8rem;
-  margin-bottom: 4.8rem;
+  margin-bottom: 2rem;
 }
 
 .pagination-btn {
@@ -184,18 +192,15 @@ td.expandable {
   color: var(--text-secondary);
   background: transparent;
   border: none;
-  border-radius: 0.8rem;
   cursor: pointer;
   transition: all var(--theme-transition);
 }
 
 .pagination-btn:hover {
-  background: transparent;
   color: var(--color-accent);
 }
 
 .pagination-btn.active {
-  background: transparent;
   color: var(--color-accent);
   font-weight: 700;
 }

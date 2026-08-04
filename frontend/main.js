@@ -1,4 +1,6 @@
-class SearchTable {
+const PAGE_SIZE = 50;
+
+class SearchResultsGrid {
   constructor() {
     this.elements = {
       form: document.querySelector(".search-form"),
@@ -16,6 +18,8 @@ class SearchTable {
       data: [],
       headers: [],
       visibleHeaders: new Set(),
+      lastQuery: null,
+      page: 1,
     };
 
     this.init();
@@ -32,13 +36,23 @@ class SearchTable {
       const td = e.target.closest("td.expandable");
       if (td) td.querySelector(".cell-content").classList.toggle("expanded");
     });
+
+    this.elements.head.addEventListener("dragstart", (e) =>
+      this.handleHeaderDragStart(e),
+    );
+    this.elements.head.addEventListener("dragover", (e) => e.preventDefault());
+    this.elements.head.addEventListener("drop", (e) =>
+      this.handleHeaderDrop(e),
+    );
   }
 
   async handleSubmit(e) {
     e.preventDefault();
     const query = this.elements.input.value.trim();
-    if (!query) return;
+    if (!query || query === this.state.lastQuery) return;
 
+    this.state.lastQuery = query;
+    this.state.page = 1;
     this.elements.input.value = "";
     this.elements.form.classList.add("loading");
 
@@ -55,7 +69,7 @@ class SearchTable {
 
   renderResults(data) {
     this.state.data = Array.isArray(data)
-      ? data.slice(0, 50)
+      ? data.slice(0, PAGE_SIZE)
       : data
         ? [data]
         : [];
@@ -94,10 +108,35 @@ class SearchTable {
       if (!this.state.visibleHeaders.has(header)) continue;
       const th = document.createElement("th");
       th.textContent = header.replace(/_/g, " ");
+      th.draggable = true;
+      th.dataset.header = header;
       tr.append(th);
     }
 
     this.elements.head.replaceChildren(tr);
+  }
+
+  handleHeaderDragStart(e) {
+    const th = e.target.closest("th");
+    if (!th) return;
+    this.draggedHeader = th.dataset.header;
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  handleHeaderDrop(e) {
+    e.preventDefault();
+    const th = e.target.closest("th");
+    if (!th || !this.draggedHeader) return;
+
+    const targetHeader = th.dataset.header;
+    if (targetHeader === this.draggedHeader) return;
+
+    const headers = this.state.headers;
+    headers.splice(headers.indexOf(this.draggedHeader), 1);
+    headers.splice(headers.indexOf(targetHeader), 0, this.draggedHeader);
+
+    this.draggedHeader = null;
+    this.renderTable();
   }
 
   buildDropdown() {
@@ -176,4 +215,4 @@ class SearchTable {
   }
 }
 
-new SearchTable();
+new SearchResultsGrid();

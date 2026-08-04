@@ -3,6 +3,10 @@ html {
   color-scheme: light dark;
   scroll-behavior: smooth;
   box-sizing: border-box;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 *,
@@ -19,8 +23,8 @@ html {
   --border-color: #bcc0cc;
   --color-accent: #8839ef;
   --color-accent-hover: #722ebc;
-  --radius: 0.6rem;
-  --theme-transition: 0.7s ease-out;
+  --radius: 1rem;
+  --theme-transition: 0.7s ease-in-out;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -66,4 +70,28 @@ select {
     background-color var(--theme-transition),
     color var(--theme-transition),
     border-color var(--theme-transition);
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+html::-webkit-scrollbar {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 1rem;
+  border: 0.3rem solid var(--bg-main);
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-accent);
+}
+
+html::-webkit-scrollbar-corner {
+  background: transparent;
 }
