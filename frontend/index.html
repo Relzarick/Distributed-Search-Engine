@@ -4,10 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="base.css">
-  <link rel="stylesheet" href="search.css">
-  <link rel="stylesheet" href="dropdown.css">
-  <link rel="stylesheet" href="results.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/search.css">
+  <link rel="stylesheet" href="styles/dropdown.css">
+  <link rel="stylesheet" href="styles/results.css">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,15 +34,25 @@
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-          <div id="filter-menu" class="filter-menu" role="menu"></div>
+
+          <div id="filter-menu" class="filter-menu" role="menu">
+            <div class="filter-search">
+              <input type="search" class="filter-search-input" aria-label="Filter columns">
+            </div>
+            <label class="filter-select-all">
+              <input type="checkbox">Select all</label>
+            <div id="filter-options"></div>
+          </div>
         </div>
       </div>
 
-      <div class="table-wrapper">
-        <table class="output-table" aria-live="polite">
-          <thead id="table-head"></thead>
-          <tbody id="table-body"></tbody>
-        </table>
+      <div class="table-frame">
+        <div class="table-wrapper">
+          <table class="output-table" aria-live="polite">
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="pagination-container">
@@ -83,7 +93,11 @@
     </div>
   </main>
 
-  <script src="main.js"></script>
+  <script src="search.js"></script>
+  <script src="results.js"></script>
+  <script src="filter.js"></script>
+  <script src="pagination.js"></script>
+  <script src="app.js"></script>
 </body>
 
 </html>

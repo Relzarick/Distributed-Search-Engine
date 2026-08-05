@@ -24,6 +24,7 @@ html {
   --color-accent: #8839ef;
   --color-accent-hover: #722ebc;
   --radius: 1rem;
+  --spacing-offset: 1.6rem;
   --theme-transition: 0.7s ease-in-out;
 }
 

@@ -5,7 +5,7 @@
 .table-container {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
+  gap: var(--spacing-offset);
   align-self: center;
   width: 90dvw;
   max-width: 140rem;
@@ -19,15 +19,18 @@
   gap: 1.2rem;
 }
 
-.table-wrapper {
-  max-height: 90dvh;
-  overflow: auto;
-  margin-bottom: 1.6rem;
-
+.table-frame {
+  overflow: hidden;
   background-color: var(--bg-card);
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
   border-radius: var(--radius);
   transition: all var(--theme-transition);
+  margin-bottom: 1.6rem;
+}
+
+.table-wrapper {
+  max-height: 90dvh;
+  overflow: auto;
 
   /* Firefox */
   scrollbar-width: thin;
@@ -154,6 +157,7 @@
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   overflow: hidden;
 }
 
@@ -165,6 +169,7 @@ td.expandable {
   cursor: pointer;
   min-width: 30rem;
 }
+
 /* =========================================
    PAGINATION
    ========================================= */
@@ -219,6 +224,7 @@ td.expandable {
   0% {
     transform: translateY(-50%) rotate(0deg);
   }
+
   100% {
     transform: translateY(-50%) rotate(360deg);
   }

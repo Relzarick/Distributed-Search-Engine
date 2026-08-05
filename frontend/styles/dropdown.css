@@ -1,0 +1,132 @@
+/* =========================================
+   COLUMN FILTER — CONTAINER & TRIGGER
+   ========================================= */
+
+.column-filter {
+  position: relative;
+}
+
+.filter-menu {
+  position: absolute;
+  top: calc(100% + var(--spacing-offset));
+  right: 0;
+  z-index: 10;
+
+  display: none;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 24rem;
+  max-height: 40vh;
+  padding: 1.6rem;
+  overflow-y: auto;
+
+  background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-main) 40%, transparent);
+  transition: all var(--theme-transition);
+}
+
+.filter-menu.show {
+  display: flex;
+}
+
+/* =========================================
+   COLUMN FILTER — SEARCH INPUT
+   ========================================= */
+
+.filter-search {
+  position: relative;
+  display: flex;
+  width: 100%;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    height: 2rem;
+    background-color: var(--text-secondary);
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='22.5' y1='22.5' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    transition: background-color var(--theme-transition);
+    pointer-events: none;
+  }
+
+  &:has(.filter-search-input:focus)::after {
+    background-color: var(--color-accent);
+  }
+}
+
+.filter-search-input {
+  flex: 1;
+  padding: 0.5rem 5.4rem 0.5rem 2rem;
+  background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 2rem;
+  outline: none;
+  transition:
+    background-color var(--theme-transition),
+    border-color var(--theme-transition),
+    color var(--theme-transition);
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+
+  &:hover {
+    border-color: color-mix(
+      in srgb,
+      var(--border-color) 60%,
+      var(--color-accent)
+    );
+  }
+}
+
+/* =========================================
+   COLUMN FILTER — OPTIONS (labels & checkboxes)
+   ========================================= */
+
+.filter-select-all,
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: color var(--theme-transition);
+}
+
+.filter-select-all {
+  padding-left: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.filter-label {
+  padding-left: 2rem;
+  font-size: 1.6rem;
+  text-transform: capitalize;
+}
+
+.filter-select-all input[type="checkbox"],
+.filter-label input[type="checkbox"] {
+  width: 1.8rem;
+  height: 1.8rem;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+#filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
