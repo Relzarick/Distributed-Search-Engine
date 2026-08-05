@@ -13,7 +13,6 @@ import org.bson.UuidRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public final class Database implements Repository {
@@ -44,7 +43,7 @@ public final class Database implements Repository {
     }
 
     @Override
-    public DocumentResults fetchMany(Set<UUID> val) {
+    public DocumentResults fetchMany(List<UUID> val) {
         return new DocumentResults(collection.find(Filters.in(id, val)).into(new ArrayList<>()));
     }
 

@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SearchHandler implements HttpHandler {
     private final SearchService service;
@@ -21,15 +23,30 @@ public class SearchHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
-            String rawQuery = parseQuery(exchange.getRequestURI().getQuery());
+            Map<String, String> queryParams = parseQuery(exchange.getRequestURI().getQuery());
+            String searchQuery = queryParams.get("q");
 
-            if (rawQuery == null) {
+            if (searchQuery == null || searchQuery.trim().isEmpty()) {
                 String error = "Bad Request: Missing or invalid query parameter.";
                 sendResponses(exchange, 400, error.getBytes(StandardCharsets.UTF_8));
                 return;
             }
 
-            String response = service.find(rawQuery);
+            int page = 0;
+
+            // Makes sure page param is valid
+            if (queryParams.containsKey("page")) {
+                try {
+                    page = Integer.parseInt(queryParams.get("page"));
+
+                    if (page < 0)
+                        page = 0;
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid page number provided, defaulting to 0");
+                }
+            }
+
+            String response = service.find(searchQuery, page);
 
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
@@ -43,11 +60,32 @@ public class SearchHandler implements HttpHandler {
         }
     }
 
-    private String parseQuery(String query) {
-        if (query == null || !query.startsWith("q="))
-            return null;
+    /**
+     * Parses the raw query into a map.
+     *
+     * @param query Is the raw HTTP request
+     */
+    private Map<String, String> parseQuery(String query) {
+        Map<String, String> params = new HashMap<>();
 
-        return URLDecoder.decode(query.substring(2), StandardCharsets.UTF_8);
+        if (query == null || query.isEmpty())
+            return params;
+
+        String[] pairs = query.split("&");
+
+        for (String pair : pairs) {
+            int idx = pair.indexOf("=");
+
+            if (idx > 0 && pair.length() > idx + 1) {
+                String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+                String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+                params.put(key, value);
+            } else if (idx > 0) {
+                String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+                params.put(key, "");
+            }
+        }
+        return params;
     }
 
     private void sendResponses(HttpExchange exchange, int code, byte[] bytes) throws IOException {

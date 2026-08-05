@@ -11,7 +11,6 @@ import org.bson.BsonValue;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 
@@ -58,7 +57,7 @@ public final class InvertedIndexer {
         to.put(new QueueItem.IndexerBatch(uniqueTokens, docIds));
     }
 
-    public Set<String> tokenizeKeyWords(String input) {
+    public List<String> tokenizeKeyWords(String input) {
         return tk.toTokens(input);
     }
 

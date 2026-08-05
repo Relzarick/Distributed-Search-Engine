@@ -2,8 +2,9 @@ package indexer.tokenizer;
 
 import opennlp.tools.stemmer.PorterStemmer;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class StemTokenization extends BaseTokenization implements TokenStrategy {
@@ -70,14 +71,14 @@ public class StemTokenization extends BaseTokenization implements TokenStrategy 
     }
 
     @Override
-    public Set<String> toTokens(String input) {
+    public List<String> toTokens(String input) {
         if (input == null || input.isBlank())
-            return Collections.emptySet();
+            return List.of();
 
         Set<String> tokens = new HashSet<>();
         toTokens(input, tokens);
 
-        return tokens;
+        return new ArrayList<>(tokens);
     }
 
     private boolean isNotValid(char c) {

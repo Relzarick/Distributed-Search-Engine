@@ -1,5 +1,6 @@
 package indexer.tokenizer;
 
+import java.util.List;
 import java.util.Set;
 
 public class StandardTokenizationV3 extends BaseTokenization implements TokenStrategy {
@@ -53,8 +54,8 @@ public class StandardTokenizationV3 extends BaseTokenization implements TokenStr
     }
 
     @Override
-    public Set<String> toTokens(String input) {
-        return Set.of();
+    public List<String> toTokens(String input) {
+        return List.of();
     }
 
     private boolean isNotValid(char c) {
