@@ -4,31 +4,25 @@ class ResultsGrid {
     this.elements = elements; // { wrapper, head, body }
     this.onReorder = onReorder;
 
-    this.elements.head.addEventListener("dragstart", (e) =>
-      this.handleHeaderDragStart(e),
-    );
+    // Header Drag & Drop Listeners
+    this.elements.head.addEventListener("dragstart", (e) => this.handleHeaderDragStart(e));
     this.elements.head.addEventListener("dragover", (e) => e.preventDefault());
-    this.elements.head.addEventListener("drop", (e) =>
-      this.handleHeaderDrop(e),
-    );
+    this.elements.head.addEventListener("drop", (e) => this.handleHeaderDrop(e));
 
+    // Cell Expansion Delegate
     this.elements.body.addEventListener("click", (e) => {
       const td = e.target.closest("td.expandable");
       if (td) td.querySelector(".cell-content").classList.toggle("expanded");
     });
   }
+  getVisibleHeaders() {
+    return this.state.headers.filter((h) => this.state.visibleHeaders.has(h));
+  }
 
   renderHeadersOnly() {
-    const tr = document.createElement("tr");
-    for (const header of this.state.headers) {
-      if (!this.state.visibleHeaders.has(header)) continue;
-      const th = document.createElement("th");
-      th.textContent = header.replace(/_/g, " ");
-      th.draggable = true;
-      th.dataset.header = header;
-      tr.append(th);
-    }
-    this.elements.head.replaceChildren(tr);
+    this.elements.head.innerHTML = `<tr>${this.getVisibleHeaders()
+      .map((h) => `<th draggable="true" data-header="${h}">${h.replace(/_/g, " ")}</th>`)
+      .join("")}</tr>`;
   }
 
   handleHeaderDragStart(e) {
@@ -44,11 +38,16 @@ class ResultsGrid {
     if (!th || !this.draggedHeader) return;
 
     const targetHeader = th.dataset.header;
-    if (targetHeader === this.draggedHeader) return;
-
     const headers = this.state.headers;
-    headers.splice(headers.indexOf(this.draggedHeader), 1);
-    headers.splice(headers.indexOf(targetHeader), 0, this.draggedHeader);
+
+    const fromIdx = headers.indexOf(this.draggedHeader);
+    const toIdx = headers.indexOf(targetHeader);
+
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+
+    // Move dragged item directly to target index regardless of drag direction
+    headers.splice(fromIdx, 1);
+    headers.splice(toIdx, 0, this.draggedHeader);
 
     this.draggedHeader = null;
     this.onReorder();
@@ -68,32 +67,23 @@ class ResultsGrid {
 
   render() {
     this.renderHeadersOnly();
+    const visible = this.getVisibleHeaders();
 
-    const fragment = document.createDocumentFragment();
-    for (const row of this.state.data) {
-      const tr = document.createElement("tr");
-      for (const header of this.state.headers) {
-        if (!this.state.visibleHeaders.has(header)) continue;
-        const td = document.createElement("td");
-        const content = document.createElement("div");
-        content.className = "cell-content";
-        content.textContent = String(row[header] ?? "");
-        td.append(content);
-        tr.append(td);
-      }
-      fragment.append(tr);
-    }
+    this.elements.body.innerHTML = this.state.data
+      .map(
+        (row) => `
+        <tr>
+          ${visible.map((h) => `<td><div class="cell-content">${row[h] ?? ""}</div></td>`).join("")}
+        </tr>`,
+      )
+      .join("");
 
-    this.elements.body.replaceChildren(fragment);
     this.markTruncatedCells();
   }
 
   markTruncatedCells() {
     this.elements.body.querySelectorAll(".cell-content").forEach((content) => {
-      content.parentElement.classList.toggle(
-        "expandable",
-        content.scrollHeight > content.clientHeight,
-      );
+      content.parentElement.classList.toggle("expandable", content.scrollHeight > content.clientHeight);
     });
   }
 }

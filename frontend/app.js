@@ -45,11 +45,7 @@ class SearchApp {
       () => this.finishRender(),
     );
 
-    this.pagination = new Pagination(
-      this.state,
-      this.paginationContainer,
-      (page) => (this.state.page = page),
-    );
+    this.pagination = new Pagination(this.state, this.paginationContainer, (page) => (this.state.page = page));
   }
 
   async handleSearch(query) {
@@ -79,9 +75,7 @@ class SearchApp {
       return;
     }
 
-    this.state.headers = Object.keys(this.state.data[0]).filter(
-      (key) => key !== "_id",
-    );
+    this.state.headers = Object.keys(this.state.data[0]).filter((key) => key !== "_id");
     this.state.visibleHeaders = new Set(this.state.headers);
     this.container.style.display = "flex";
 

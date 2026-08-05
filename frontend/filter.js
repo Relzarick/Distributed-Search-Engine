@@ -22,18 +22,14 @@ class ColumnFilter {
     }
 
     // Select all handler
-    this.elements.selectAll.addEventListener("change", (e) =>
-      this.handleSelectAll(e),
-    );
+    this.elements.selectAll.addEventListener("change", (e) => this.handleSelectAll(e));
 
     // Event delegation for individual column checkboxes
     this.elements.options.addEventListener("change", (e) => {
       if (!e.target.matches('input[type="checkbox"]')) return;
 
       const header = e.target.dataset.header;
-      e.target.checked
-        ? this.state.visibleHeaders.add(header)
-        : this.state.visibleHeaders.delete(header);
+      e.target.checked ? this.state.visibleHeaders.add(header) : this.state.visibleHeaders.delete(header);
 
       this.syncSelectAll();
       this.onChange();
@@ -76,21 +72,16 @@ class ColumnFilter {
 
   handleSelectAll(e) {
     const checked = e.target.checked;
-    this.state.visibleHeaders = checked
-      ? new Set(this.state.headers)
-      : new Set();
+    this.state.visibleHeaders = checked ? new Set(this.state.headers) : new Set();
 
-    this.elements.options
-      .querySelectorAll('input[type="checkbox"]')
-      .forEach((cb) => (cb.checked = checked));
+    this.elements.options.querySelectorAll('input[type="checkbox"]').forEach((cb) => (cb.checked = checked));
 
     this.onChange();
   }
 
   syncSelectAll() {
     this.elements.selectAll.checked =
-      this.state.headers.length > 0 &&
-      this.state.visibleHeaders.size === this.state.headers.length;
+      this.state.headers.length > 0 && this.state.visibleHeaders.size === this.state.headers.length;
   }
 
   updateCount() {
