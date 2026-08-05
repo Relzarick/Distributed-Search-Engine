@@ -1,5 +1,3 @@
-const PAGE_SIZE = 50;
-
 class SearchApp {
   constructor() {
     this.state = {
@@ -7,12 +5,10 @@ class SearchApp {
       headers: [],
       visibleHeaders: new Set(),
       lastQuery: null,
-      page: 1,
     };
 
     this.container = document.getElementById("table-container");
     this.tableFrame = document.querySelector(".table-frame");
-    this.paginationContainer = document.querySelector(".pagination-container");
 
     this.searchBar = new SearchBar(
       document.querySelector(".search-form"),
@@ -44,15 +40,12 @@ class SearchApp {
       },
       () => this.finishRender(),
     );
-
-    this.pagination = new Pagination(this.state, this.paginationContainer, (page) => (this.state.page = page));
   }
 
   async handleSearch(query) {
     if (query === this.state.lastQuery) return;
 
     this.state.lastQuery = query;
-    this.state.page = 1;
     this.searchBar.setLoading(true);
 
     try {
@@ -68,7 +61,7 @@ class SearchApp {
 
   renderResults(data) {
     const list = Array.isArray(data) ? data : data ? [data] : [];
-    this.state.data = list.slice(0, PAGE_SIZE);
+    this.state.data = list;
 
     if (!this.state.data.length) {
       this.container.style.display = "none";
@@ -88,7 +81,6 @@ class SearchApp {
     const hasColumns = this.state.visibleHeaders.size > 0;
 
     this.tableFrame.style.display = hasColumns ? "block" : "none";
-    this.paginationContainer.style.display = hasColumns ? "flex" : "none";
 
     this.columnFilter.updateCount();
     if (hasColumns) this.grid.render();

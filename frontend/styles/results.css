@@ -1,7 +1,6 @@
 /* =========================================
    LAYOUT & CONTAINERS
    ========================================= */
-
 .table-container {
   display: flex;
   flex-direction: column;
@@ -32,7 +31,6 @@
   max-height: 90dvh;
   overflow: auto;
 
-  /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
 }
@@ -59,17 +57,11 @@
 }
 
 .btn:hover {
-  border-color: color-mix(
-    in srgb,
-    var(--border-color) 60%,
-    var(--color-accent)
-  );
+  border-color: color-mix(in srgb, var(--border-color) 60%, var(--color-accent));
 }
-
 /* =========================================
    DATA TABLE
    ========================================= */
-
 .output-table {
   width: 100%;
   border-collapse: separate;
@@ -81,13 +73,12 @@
 .output-table td {
   padding: 1.8rem 2.4rem;
   font-size: 1.8rem;
-  transition: all var(--theme-transition);
 }
 
 .output-table th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
 
   font-weight: 700;
   text-transform: capitalize;
@@ -112,16 +103,23 @@
   vertical-align: top;
 
   color: var(--text-primary);
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--border-color) 40%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+  background-color: var(--bg-main);
 }
 
-.output-table tbody tr {
-  transition: background-color var(--theme-transition);
+/* Hover state for normal unpinned rows */
+.output-table tbody tr:not(.pinned):hover {
+  background-color: color-mix(in srgb, var(--color-accent) 8%, var(--bg-main));
 }
 
-.output-table tbody tr:hover {
-  background-color: color-mix(in srgb, var(--color-accent) 4%, transparent);
+/* Pinned rows stay highlighted by default */
+.output-table tbody tr.pinned td {
+  background-color: color-mix(in srgb, var(--color-accent) 8%, var(--bg-main));
+}
+
+/* Border on the very last pinned row to clearly mark where pinning ends */
+.output-table tbody tr.pinned:not(:has(+ tr.pinned)) td {
+  border-bottom: 2px solid var(--border-color);
 }
 
 .output-table tbody tr:last-child td {
@@ -144,11 +142,9 @@ td.expandable {
   cursor: pointer;
   min-width: 30rem;
 }
-
 /* =========================================
    PAGINATION
    ========================================= */
-
 .pagination-container {
   display: flex;
   justify-content: flex-end;
