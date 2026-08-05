@@ -8,8 +8,8 @@
   gap: var(--spacing-offset);
   align-self: center;
   width: 90dvw;
-  max-width: 140rem;
-  margin-block-start: 4.8rem;
+  max-width: 168rem;
+  margin-block-start: var(--spacing-layout);
 }
 
 .table-toolbar {
@@ -36,31 +36,6 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
 }
-
-/* Webkit (Chrome, Safari, Edge) */
-.table-wrapper::-webkit-scrollbar {
-  width: 1.2rem;
-  height: 1.2rem;
-}
-
-.table-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
-  border-radius: 1rem;
-  border: 0.3rem solid var(--bg-card);
-}
-
-.table-wrapper::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-accent);
-}
-
-.table-wrapper::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
 /* =========================================
    COMPONENTS
    ========================================= */

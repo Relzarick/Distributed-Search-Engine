@@ -1,75 +1,99 @@
 class ColumnFilter {
   constructor(state, elements, onChange) {
     this.state = state;
-    this.elements = elements; // { btn, menu, selectAll, options, count }
+    this.elements = elements;
     this.onChange = onChange;
 
-    this.elements.btn.addEventListener("click", () => this.toggleMenu());
-    document.addEventListener("click", (e) => this.handleOutsideClick(e));
+    // Internal DOM query
+    this.searchInput = this.elements.menu.querySelector(".filter-search-input");
+
+    // Sync ARIA state and reset search whenever popover closes
+    this.elements.menu.addEventListener("toggle", (e) => {
+      const isOpen = e.newState === "open";
+      this.elements.btn.setAttribute("aria-expanded", isOpen);
+
+      if (!isOpen) this.resetSearch();
+    });
+
+    // Real-time search filtering on keypress ('input') and clear button ('search')
+    if (this.searchInput) {
+      this.searchInput.addEventListener("input", () => this.filterOptions());
+      this.searchInput.addEventListener("search", () => this.filterOptions());
+    }
+
+    // Select all handler
     this.elements.selectAll.addEventListener("change", (e) =>
       this.handleSelectAll(e),
     );
-  }
 
-  build() {
-    this.elements.selectAll.checked = true;
-    this.elements.options.replaceChildren();
+    // Event delegation for individual column checkboxes
+    this.elements.options.addEventListener("change", (e) => {
+      if (!e.target.matches('input[type="checkbox"]')) return;
 
-    this.state.headers.forEach((header) => {
-      const label = document.createElement("label");
-      label.className = "filter-label";
-      label.dataset.header = header;
+      const header = e.target.dataset.header;
+      e.target.checked
+        ? this.state.visibleHeaders.add(header)
+        : this.state.visibleHeaders.delete(header);
 
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = this.state.visibleHeaders.has(header);
-
-      checkbox.addEventListener("change", (e) => {
-        e.target.checked
-          ? this.state.visibleHeaders.add(header)
-          : this.state.visibleHeaders.delete(header);
-
-        this.elements.selectAll.checked =
-          this.state.visibleHeaders.size === this.state.headers.length;
-
-        this.onChange();
-      });
-
-      label.append(checkbox, header.replace(/_/g, " "));
-      this.elements.options.append(label);
+      this.syncSelectAll();
+      this.onChange();
     });
   }
 
+  build() {
+    this.syncSelectAll();
+
+    this.elements.options.innerHTML = this.state.headers
+      .map(
+        (header) => `
+        <label class="filter-label" data-header="${header}">
+          <input type="checkbox" data-header="${header}" ${this.state.visibleHeaders.has(header) ? "checked" : ""}>
+          ${header.replace(/_/g, " ")}
+        </label>`,
+      )
+      .join("");
+
+    // Re-apply current search query if menu is rebuilt while typing
+    if (this.searchInput?.value) this.filterOptions();
+  }
+
+  filterOptions() {
+    const query = this.searchInput.value.trim().toLowerCase();
+    const labels = this.elements.options.querySelectorAll(".filter-label");
+
+    labels.forEach((label) => {
+      const match = label.textContent.toLowerCase().includes(query);
+      // Inline style overrides .filter-label { display: flex } in CSS
+      label.style.display = match ? "" : "none";
+    });
+  }
+
+  resetSearch() {
+    if (!this.searchInput) return;
+    this.searchInput.value = "";
+    this.filterOptions();
+  }
+
   handleSelectAll(e) {
-    this.state.visibleHeaders = e.target.checked
+    const checked = e.target.checked;
+    this.state.visibleHeaders = checked
       ? new Set(this.state.headers)
       : new Set();
 
     this.elements.options
       .querySelectorAll('input[type="checkbox"]')
-      .forEach((checkbox) => {
-        checkbox.checked = e.target.checked;
-      });
+      .forEach((cb) => (cb.checked = checked));
 
     this.onChange();
   }
 
+  syncSelectAll() {
+    this.elements.selectAll.checked =
+      this.state.headers.length > 0 &&
+      this.state.visibleHeaders.size === this.state.headers.length;
+  }
+
   updateCount() {
     this.elements.count.textContent = `${this.state.visibleHeaders.size} of ${this.state.headers.length} columns`;
-  }
-
-  toggleMenu() {
-    const isExpanded = this.elements.menu.classList.toggle("show");
-    this.elements.btn.setAttribute("aria-expanded", isExpanded);
-  }
-
-  handleOutsideClick(e) {
-    if (
-      !this.elements.btn.contains(e.target) &&
-      !this.elements.menu.contains(e.target)
-    ) {
-      this.elements.menu.classList.remove("show");
-      this.elements.btn.setAttribute("aria-expanded", "false");
-    }
   }
 }

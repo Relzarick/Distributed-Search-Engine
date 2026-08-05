@@ -11,6 +11,8 @@ class SearchApp {
     };
 
     this.container = document.getElementById("table-container");
+    this.tableFrame = document.querySelector(".table-frame");
+    this.paginationContainer = document.querySelector(".pagination-container");
 
     this.searchBar = new SearchBar(
       document.querySelector(".search-form"),
@@ -25,7 +27,10 @@ class SearchApp {
         head: document.getElementById("table-head"),
         body: document.getElementById("table-body"),
       },
-      () => this.handleReorder(),
+      () => {
+        this.columnFilter.build();
+        this.finishRender();
+      },
     );
 
     this.columnFilter = new ColumnFilter(
@@ -37,13 +42,13 @@ class SearchApp {
         options: document.getElementById("filter-options"),
         count: document.getElementById("filter-count"),
       },
-      () => this.handleFilterChange(),
+      () => this.finishRender(),
     );
 
     this.pagination = new Pagination(
       this.state,
-      document.querySelector(".pagination-container"),
-      (page) => this.handlePageChange(page),
+      this.paginationContainer,
+      (page) => (this.state.page = page),
     );
   }
 
@@ -52,7 +57,6 @@ class SearchApp {
 
     this.state.lastQuery = query;
     this.state.page = 1;
-    this.searchBar.clear();
     this.searchBar.setLoading(true);
 
     try {
@@ -67,11 +71,8 @@ class SearchApp {
   }
 
   renderResults(data) {
-    this.state.data = Array.isArray(data)
-      ? data.slice(0, PAGE_SIZE)
-      : data
-        ? [data]
-        : [];
+    const list = Array.isArray(data) ? data : data ? [data] : [];
+    this.state.data = list.slice(0, PAGE_SIZE);
 
     if (!this.state.data.length) {
       this.container.style.display = "none";
@@ -89,22 +90,14 @@ class SearchApp {
     this.finishRender();
   }
 
-  handleReorder() {
-    this.columnFilter.build();
-    this.finishRender();
-  }
-
-  handleFilterChange() {
-    this.finishRender();
-  }
-
-  handlePageChange(page) {
-    // Not yet wired
-  }
-
   finishRender() {
+    const hasColumns = this.state.visibleHeaders.size > 0;
+
+    this.tableFrame.style.display = hasColumns ? "block" : "none";
+    this.paginationContainer.style.display = hasColumns ? "flex" : "none";
+
     this.columnFilter.updateCount();
-    this.grid.render();
+    if (hasColumns) this.grid.render();
   }
 }
 

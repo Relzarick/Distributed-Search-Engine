@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/svg.css">
   <link rel="stylesheet" href="styles/search.css">
   <link rel="stylesheet" href="styles/dropdown.css">
   <link rel="stylesheet" href="styles/results.css">
@@ -20,22 +21,22 @@
   </header>
 
   <main class="search-container">
-    <form class="search-form" role="search">
-      <input type="search" name="query" placeholder="Search..." aria-label="Search query">
-    </form>
+    <search class="search-container">
+      <form class="search-form">
+        <input type="search" name="query" placeholder="Search..." aria-label="Search query">
+      </form>
+    </search>
 
     <div class="table-container" id="table-container" style="display: none;">
       <div class="table-toolbar">
         <div class="column-filter">
-          <button type="button" id="filter-btn" class="btn" aria-haspopup="menu" aria-expanded="false">
+          <button type="button" id="filter-btn" class="btn" aria-haspopup="menu" aria-expanded="false"
+            popovertarget="filter-menu">
             <span id="filter-count"></span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            <span class="icon icon-lg icon-chevron-down" aria-hidden="true"></span>
           </button>
 
-          <div id="filter-menu" class="filter-menu" role="menu">
+          <div id="filter-menu" class="filter-menu" popover role="menu">
             <div class="filter-search">
               <input type="search" class="filter-search-input" aria-label="Filter columns">
             </div>
@@ -57,18 +58,11 @@
 
       <div class="pagination-container">
         <button type="button" class="pagination-btn" aria-label="First Page">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m11 17-5-5 5-5" />
-            <path d="m18 17-5-5 5-5" />
-          </svg>
+          <span class="icon icon-chevrons-left" aria-hidden="true"></span>
         </button>
 
         <button type="button" class="pagination-btn" aria-label="Previous Page">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
+          <span class="icon icon-chevron-left" aria-hidden="true"></span>
         </button>
 
         <button type="button" class="pagination-btn active">1</button>
@@ -76,20 +70,14 @@
         <button type="button" class="pagination-btn">3</button>
 
         <button type="button" class="pagination-btn" aria-label="Next Page">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m9 18 6-6-6-6" />
-          </svg>
+          <span class="icon icon-chevron-right" aria-hidden="true"></span>
         </button>
 
         <button type="button" class="pagination-btn" aria-label="Last Page">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m6 17 5-5-5-5" />
-            <path d="m13 17 5-5-5-5" />
-          </svg>
+          <span class="icon icon-chevrons-right" aria-hidden="true"></span>
         </button>
       </div>
+
     </div>
   </main>
 
