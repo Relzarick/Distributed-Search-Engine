@@ -1,4 +1,3 @@
-// app.js
 import { SearchBar } from "./search.js";
 import { ResultsGrid } from "./results.js";
 import { ColumnFilter } from "./filter.js";
@@ -76,11 +75,12 @@ export class SearchApp {
 
     this.columnFilter = new ColumnFilter(
       {
-        btn: document.querySelector("[data-filter-trigger]"),
-        menu: document.querySelector("[data-filter-menu]"),
+        btn: document.querySelector(".btn-filter"),
+        menu: document.querySelector(".filter-menu"),
         selectAll: document.querySelector(".filter-select-all input"),
-        options: document.querySelector("[data-filter-options]"),
-        count: document.querySelector("[data-filter-count]"),
+        options: document.querySelector(".filter-options"),
+        count: document.querySelector(".filter-count"),
+        alignTo: document.querySelector(".table-frame"),
       },
       {
         onToggle: (header, isChecked) => this.handleHeaderToggle(header, isChecked),

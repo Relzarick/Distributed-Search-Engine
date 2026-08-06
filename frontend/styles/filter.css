@@ -1,25 +1,56 @@
 /* =========================================
-   COLUMN FILTER — CONTAINER & DISCLOSURE
+   COLUMN FILTER — CONTAINER & BUTTON
    ========================================= */
 .column-filter {
   position: relative;
 }
 
-/* Remove default disclosure marker */
-.column-filter summary {
-  list-style: none;
-  user-select: none;
-
-  &::-webkit-details-marker {
-    display: none;
-  }
+.btn-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.4rem 1.2rem;
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    background-color var(--theme-transition),
+    border-color var(--theme-transition);
 }
 
+.btn-filter:hover {
+  border-color: var(--color-accent);
+}
+
+.btn-filter:focus-visible {
+  outline: 0.2rem solid var(--color-accent);
+}
+
+.filter-count {
+  font-size: inherit;
+}
+
+/* Chevron icon animation on open */
+.filter-chevron {
+  --spin: 0deg;
+  transform: rotate(var(--spin));
+  transition: transform var(--theme-transition);
+}
+
+/* =========================================
+   COLUMN FILTER — DROPDOWN MENU
+   ========================================= */
 .filter-menu {
+  inset: auto;
+  left: auto;
+  bottom: auto;
+  margin: 0;
+  margin-top: var(--spacing-offset);
   display: none;
-  position: absolute;
-  top: calc(100% + var(--spacing-offset));
-  right: 0;
 
   flex-direction: column;
   gap: var(--spacing-sm);
@@ -28,7 +59,7 @@
   padding: var(--spacing-md);
   overflow-y: auto;
 
-  z-index: 9999;
+  z-index: 10;
 
   background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
   backdrop-filter: blur(8px);
@@ -37,7 +68,7 @@
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
 }
 
-.column-filter[open] .filter-menu {
+.filter-menu:popover-open {
   display: flex;
 }
 
@@ -103,14 +134,12 @@
   transition: color var(--theme-transition);
 }
 
-/* "Select all" sits flush left */
 .filter-select-all {
   padding-left: 0;
   font-size: 1.8rem;
   font-weight: 600;
 }
 
-/* Individual column items indented under "Select all" */
 .filter-label {
   padding-left: 2rem;
   font-size: 1.6rem;

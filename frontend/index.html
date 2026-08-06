@@ -6,8 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles/base.css">
   <link rel="stylesheet" href="styles/svg.css">
+  <link rel="stylesheet" href="styles/nav.css">
   <link rel="stylesheet" href="styles/search.css">
-  <link rel="stylesheet" href="styles/dropdown.css">
+  <link rel="stylesheet" href="styles/filter.css">
   <link rel="stylesheet" href="styles/results.css">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,36 +17,85 @@
 </head>
 
 <body>
+  <nav class="top-nav" aria-label="Global navigation">
+    <div class="top-nav-actions">
+      <a href="https://github.com/Relzarick/Distributed-Search-Engine" target="_blank" rel="noopener noreferrer"
+        class="btn-icon" aria-label="GitHub repository">
+        <span class="icon icon-lg icon-github" aria-hidden="true"></span>
+      </a>
+
+      <div class="info-dropdown">
+        <button type="button" class="btn-icon" popovertarget="info-menu" aria-label="Information menu">
+          <span class="icon icon-lg icon-info" aria-hidden="true"></span>
+        </button>
+
+        <div id="info-menu" popover class="dropdown-menu info-menu" role="menu">
+          <div class="info-menu-header">
+            <h2>About</h2>
+          </div>
+
+          <div class="info-menu-content">
+            <p>Query and explore CSV data through a backend search engine.</p>
+            <hr class="info-divider">
+            <ul class="info-features">
+              <li>
+                <span class="info-feature-name">Reorder</span>
+                <span class="info-feature-desc">Drag a header to move it</span>
+              </li>
+              <li>
+                <span class="info-feature-name">Pin</span>
+                <span class="info-feature-desc">Double-click a row to fix it in place</span>
+              </li>
+              <li>
+                <span class="info-feature-name">Expand</span>
+                <span class="info-feature-desc">Click a truncated cell to see more</span>
+              </li>
+            </ul>
+            <hr class="info-divider">
+            <a href="https://www.kaggle.com/datasets/alanvourch/tmdb-movies-daily-updates?resource=download"
+              class="info-dataset-link" target="_blank" rel="noopener noreferrer">
+              <span>View dataset source</span>
+              <span class="icon icon-link" aria-hidden="true"></span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
   <header class="header">
-    <h1>Skopos</h1>
+    <h1>skopos</h1>
   </header>
 
   <main class="page-layout">
     <search class="search-container">
       <form class="search-form" action="" method="get" role="search">
-        <input type="search" name="query" placeholder="Search..." aria-label="Search query" autocomplete="off">
+        <input type="search" name="query" placeholder="search..." aria-label="Search query" autocomplete="off">
       </form>
     </search>
 
     <div class="table-container" data-table-container hidden>
       <div class="table-toolbar">
-        <details class="column-filter">
-          <summary class="btn" data-filter-trigger aria-haspopup="menu">
-            <span data-filter-count></span>
-            <span class="icon icon-lg icon-chevron-down" aria-hidden="true"></span>
-          </summary>
+        <div class="column-filter">
+          <button type="button" class="btn-filter" popovertarget="filter-menu" aria-expanded="false"
+            aria-label="Filter columns">
+            <span class="filter-count"></span>
+            <span class="icon icon-chevron-down filter-chevron" aria-hidden="true"></span>
+          </button>
 
-          <div class="filter-menu" data-filter-menu role="menu">
+          <div id="filter-menu" class="filter-menu" popover>
             <div class="filter-search">
-              <input type="search" class="filter-search-input" aria-label="Filter columns" placeholder="Filter...">
+              <input type="search" class="filter-search-input" placeholder="filter..." />
             </div>
+
             <label class="filter-select-all">
-              <input type="checkbox">
+              <input type="checkbox" />
               <span>Select all</span>
             </label>
-            <div class="filter-options" data-filter-options></div>
+
+            <div class="filter-options"></div>
           </div>
-        </details>
+        </div>
       </div>
 
       <div class="table-frame" data-table-frame>

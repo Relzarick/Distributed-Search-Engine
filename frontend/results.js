@@ -90,8 +90,7 @@ export class ResultsGrid {
     if (!this.elements.wrapper || this.elements.wrapper.clientWidth === 0) return;
 
     const visibleSet = new Set(visibleHeaders);
-    let activeVisible = this.getVisibleHeaders(headers, visibleSet);
-    this.renderHeadersOnly(activeVisible);
+    this.render(this.currentData, headers, visibleSet);
 
     let changed = false;
     while (
@@ -100,8 +99,7 @@ export class ResultsGrid {
       visibleSet.size > 1
     ) {
       visibleSet.delete([...visibleSet].pop());
-      activeVisible = this.getVisibleHeaders(headers, visibleSet);
-      this.renderHeadersOnly(activeVisible);
+      this.render(this.currentData, headers, visibleSet);
       changed = true;
     }
 

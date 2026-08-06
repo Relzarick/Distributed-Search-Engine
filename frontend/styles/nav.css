@@ -1,0 +1,144 @@
+/* =========================================
+   TOP NAV — LAYOUT & BUTTONS
+   ========================================= */
+.top-nav {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.top-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.4rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+
+  transition: color var(--theme-transition);
+}
+
+.btn-icon:hover {
+  color: var(--color-accent);
+}
+
+.btn-icon:focus-visible {
+  outline: 0.2rem solid var(--color-accent);
+  border-radius: 0.4rem;
+}
+
+/* =========================================
+   TOP NAV — INFO DROPDOWN (POPOVER)
+   ========================================= */
+.info-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.info-menu[popover] {
+  inset: auto;
+  top: calc(3.6rem + var(--spacing-offset));
+  right: var(--spacing-md);
+  margin: 0;
+
+  width: min(90vw, 30rem);
+  padding: var(--spacing-md);
+
+  background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg-main) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  color: var(--text-primary);
+}
+
+@media (min-width: 480px) {
+  .info-menu[popover] {
+    width: 36rem;
+  }
+}
+
+.info-features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.info-features li {
+  display: flex;
+  align-items: center;
+  gap: 3.5rem;
+}
+
+.info-feature-name {
+  flex-shrink: 0;
+  width: 8rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  padding: 0.8rem 0.6rem;
+  background-color: color-mix(in srgb, var(--bg-main) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-radius: var(--radius);
+}
+
+.info-feature-desc {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 1.4rem;
+  text-align: left;
+}
+
+.info-dataset-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--theme-transition);
+}
+
+.info-menu-header h2 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.info-menu-content {
+  font-size: 1.4rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.info-menu-content p {
+  margin: 0;
+}
+
+.info-divider {
+  margin: var(--spacing-sm) 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+}
