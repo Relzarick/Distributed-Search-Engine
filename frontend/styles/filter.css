@@ -1,10 +1,6 @@
 /* =========================================
    COLUMN FILTER — CONTAINER & BUTTON
    ========================================= */
-.column-filter {
-  position: relative;
-}
-
 .btn-filter {
   display: inline-flex;
   align-items: center;
@@ -158,4 +154,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+}
+/* =========================================
+   TOOLBAR — FULLSCREEN TOGGLE
+   ========================================= */
+.icon-fullscreen {
+  width: 2.5rem;
+  height: 2.5rem;
 }

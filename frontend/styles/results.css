@@ -12,26 +12,111 @@
 }
 
 .table-toolbar {
+  position: relative;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: var(--spacing-sm);
 }
 
+.toolbar-status {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity var(--theme-transition);
+}
+
+.toolbar-status.is-visible {
+  opacity: 1;
+}
+
 .table-frame {
-  overflow: hidden;
-  background-color: var(--bg-card);
-  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
-  border-radius: var(--radius);
-  transition: all var(--theme-transition);
+  position: relative;
   margin-bottom: var(--spacing-md);
 }
 
 .table-wrapper {
   max-height: 90dvh;
   overflow: auto;
+  background-color: var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: var(--radius);
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
+}
+/* =========================================
+   FLOATING PIN COPY BUTTONS (OUTSIDE TABLE)
+   ========================================= */
+.pin-copy-container {
+  position: absolute;
+  top: 0;
+  left: -4.5rem;
+  width: 4rem;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden; /* Fixes phantom bottom margin from offscreen absolute children */
+}
+
+.pin-copy-item {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--theme-transition),
+    visibility var(--theme-transition);
+}
+
+.pin-copy-item.is-active,
+.pin-copy-item:hover {
+  opacity: 1;
+  visibility: visible;
+}
+
+.btn-pin-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--theme-transition);
+}
+
+.btn-pin-copy .icon {
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.btn-pin-copy:hover {
+  color: var(--color-accent);
+}
+/* =========================================
+   DRAGGABLE HANDLES (shared: headers + pin handle)
+   ========================================= */
+.draggable-handle {
+  cursor: grab;
+  background-color: color-mix(in srgb, var(--bg-main) 60%, var(--bg-card));
+}
+
+.draggable-handle:active {
+  cursor: grabbing;
 }
 
 /* =========================================
@@ -80,13 +165,8 @@
   font-weight: 700;
   text-transform: capitalize;
   color: var(--text-secondary);
-  background-color: color-mix(in srgb, var(--bg-main) 60%, var(--bg-card));
   border-bottom: 2px solid var(--border-color);
-  cursor: grab;
-}
-
-.output-table th:active {
-  cursor: grabbing;
+  background-color: var(--bg-card);
 }
 
 .output-table td {
@@ -98,6 +178,22 @@
   background-color: var(--bg-main);
 }
 
+.output-table tbody tr {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .pin-copy-container {
+    display: none !important;
+  }
+
+  .table-container.is-fullscreen {
+    padding-left: 2rem;
+  }
+}
+
 .output-table tbody tr:not(.pinned):hover {
   background-color: color-mix(in srgb, var(--color-accent) 8%, var(--bg-main));
 }
@@ -106,9 +202,20 @@
   background-color: color-mix(in srgb, var(--color-accent) 8%, var(--bg-main));
 }
 
+.output-table tbody tr.pinned td.pin-cell {
+  position: relative;
+  background-color: color-mix(in srgb, var(--bg-main) 60%, var(--bg-card));
+  border-right: 2px solid var(--border-color);
+}
+
+.output-table tbody tr.pinned:not(:has(+ tr.pinned)) td {
+  border-bottom: 2px solid var(--border-color);
+}
+
 .output-table tbody tr:last-child td {
   border-bottom: none;
 }
+
 /* =========================================
    CELL TRUNCATION & EXPANSION
    ========================================= */
@@ -128,6 +235,7 @@ td.expandable {
   cursor: pointer;
   min-width: 30rem;
 }
+
 /* =========================================
    PAGINATION
    ========================================= */
@@ -166,4 +274,42 @@ td.expandable {
 .pagination-btn:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+/* =========================================
+   FULLSCREEN MODE
+   ========================================= */
+.table-container.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100dvw;
+  height: 100dvh;
+  max-width: none;
+  margin: 0;
+  padding: 2rem 2rem 2rem 5.5rem;
+  background-color: var(--bg-main);
+}
+
+.table-container.is-fullscreen .table-toolbar {
+  margin-top: 0;
+}
+
+.table-container.is-fullscreen .table-frame {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+.table-container.is-fullscreen .table-wrapper {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+
+.table-container.is-fullscreen .pagination-container {
+  margin-bottom: 0;
 }

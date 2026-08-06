@@ -37,20 +37,27 @@
           <div class="info-menu-content">
             <p>Query and explore CSV data through a backend search engine.</p>
             <hr class="info-divider">
+
             <ul class="info-features">
               <li>
                 <span class="info-feature-name">Reorder</span>
-                <span class="info-feature-desc">Drag a header to move it</span>
+                <span class="info-feature-desc">Drag and orient your data</span>
               </li>
               <li>
                 <span class="info-feature-name">Pin</span>
-                <span class="info-feature-desc">Double-click a row to fix it in place</span>
+                <span class="info-feature-desc">Double-click to fix it in place</span>
+              </li>
+              <li>
+                <span class="info-feature-name">Copy</span>
+                <span class="info-feature-desc desc-desktop">Click the icon on hover</span>
+                <span class="info-feature-desc desc-mobile">Hold row to copy data</span>
               </li>
               <li>
                 <span class="info-feature-name">Expand</span>
                 <span class="info-feature-desc">Click a truncated cell to see more</span>
               </li>
             </ul>
+
             <hr class="info-divider">
             <a href="https://www.kaggle.com/datasets/alanvourch/tmdb-movies-daily-updates?resource=download"
               class="info-dataset-link" target="_blank" rel="noopener noreferrer">
@@ -72,10 +79,22 @@
       <form class="search-form" action="" method="get" role="search">
         <input type="search" name="query" placeholder="search..." aria-label="Search query" autocomplete="off">
       </form>
+
+      <div class="header-notice">
+        <p class="notice-line">Exploring the TMDB + IMDb dataset</p>
+        <p class="notice-line">More filters coming soon</p>
+        <p class="notice-line">Click the info icon to view features</p>
+      </div>
     </search>
 
     <div class="table-container" data-table-container hidden>
       <div class="table-toolbar">
+        <div class="toolbar-status" data-toolbar-status aria-live="polite"></div>
+
+        <button type="button" class="btn-icon btn-fullscreen" aria-label="Toggle fullscreen" aria-pressed="false">
+          <span class="icon icon-fullscreen" aria-hidden="true"></span>
+        </button>
+
         <div class="column-filter">
           <button type="button" class="btn-filter" popovertarget="filter-menu" aria-expanded="false"
             aria-label="Filter columns">

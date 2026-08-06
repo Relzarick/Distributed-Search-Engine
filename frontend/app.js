@@ -2,6 +2,7 @@ import { SearchBar } from "./search.js";
 import { ResultsGrid } from "./results.js";
 import { ColumnFilter } from "./filter.js";
 import { Pagination } from "./pagination.js";
+import { StatusNotifier, NotificationSource } from "./notifier.js";
 
 export class SearchService {
   constructor(baseUrl = "/search") {
@@ -54,6 +55,10 @@ export class SearchApp {
     this.container = document.querySelector("[data-table-container]");
     this.tableFrame = document.querySelector("[data-table-frame]");
     this.paginationContainer = document.querySelector(".pagination-container");
+    this.fullscreenBtn = document.querySelector(".btn-fullscreen");
+    this.headerNotice = document.querySelector(".header-notice");
+
+    this.notifier = new StatusNotifier(document.querySelector("[data-toolbar-status]"));
 
     this.searchBar = new SearchBar(
       document.querySelector(".search-form"),
@@ -70,6 +75,10 @@ export class SearchApp {
       {
         onHeaderReorder: (newHeaders) => this.handleHeaderReorder(newHeaders),
         onHeaderAutoFit: (visibleSet) => this.handleHeaderAutoFit(visibleSet),
+        onRowCopy: (row) => {
+          navigator.clipboard.writeText(JSON.stringify(row, null, 2));
+          this.notifier.notify(NotificationSource.ROW_COPY);
+        },
       },
     );
 
@@ -93,9 +102,24 @@ export class SearchApp {
       (uiPage) => this.handlePageChange(uiPage),
       this.state.totalPages,
     );
+
+    if (this.fullscreenBtn) this.fullscreenBtn.addEventListener("click", () => this.toggleFullscreen());
+  }
+
+  toggleFullscreen() {
+    if (!this.container) return;
+    const isFullscreen = this.container.classList.toggle("is-fullscreen");
+    this.fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
+    document.body.classList.toggle("no-scroll", isFullscreen);
+
+    requestAnimationFrame(() => {
+      this.grid.applyRowOffsets();
+      this.grid.markTruncatedCells();
+    });
   }
 
   async handleSearch(query) {
+    if (this.headerNotice) this.headerNotice.classList.add("is-hidden");
     this.state.lastQuery = query;
     this.state.page = 0;
     await this.fetchData();

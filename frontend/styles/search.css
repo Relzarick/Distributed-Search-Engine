@@ -1,11 +1,11 @@
-.header {
+header {
   margin-block: 15dvh var(--spacing-layout);
   text-align: center;
 
   h1 {
     font-size: 5.6rem;
     font-weight: 700;
-    margin: 0 0 1.2rem 0;
+    margin: 0;
     letter-spacing: -0.025em;
     text-wrap: balance;
 
@@ -13,17 +13,50 @@
       font-size: 7.2rem;
     }
   }
+}
 
-  .subtitle {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 2.2rem;
-    text-wrap: balance;
-    transition: color var(--theme-transition);
+.search-container {
+  width: min(90%, var(--max-width-search));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-inline: auto;
+}
 
-    @media (min-width: 768px) {
-      font-size: 2.6rem;
-    }
+.header-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+  text-align: center;
+  max-height: 20rem;
+  opacity: 1;
+  overflow: hidden;
+  transition:
+    opacity var(--theme-transition-quick),
+    max-height var(--theme-transition-quick),
+    margin-top var(--theme-transition-quick),
+    visibility var(--theme-transition-quick);
+}
+
+.header-notice.is-hidden {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  visibility: hidden;
+}
+
+.notice-line {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.6rem;
+  font-weight: 400;
+  text-wrap: balance;
+  transition: color var(--theme-transition);
+
+  @media (min-width: 768px) {
+    font-size: 1.8rem;
   }
 }
 

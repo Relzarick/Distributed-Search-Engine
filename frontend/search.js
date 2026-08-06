@@ -3,6 +3,7 @@ export class SearchBar {
     this.form = formEl;
     this.input = inputEl;
     this.onSubmit = onSubmit;
+
     if (this.form) this.form.addEventListener("submit", (e) => this.handleSubmit(e));
   }
 
