@@ -20,72 +20,48 @@
     <h1>Skopos</h1>
   </header>
 
-  <main class="search-container">
+  <main class="page-layout">
     <search class="search-container">
-      <form class="search-form">
-        <input type="search" name="query" placeholder="Search..." aria-label="Search query">
+      <form class="search-form" action="" method="get" role="search">
+        <input type="search" name="query" placeholder="Search..." aria-label="Search query" autocomplete="off">
       </form>
     </search>
 
-    <div class="table-container" id="table-container" style="display: none;">
+    <div class="table-container" data-table-container hidden>
       <div class="table-toolbar">
-        <div class="column-filter">
-          <button type="button" id="filter-btn" class="btn" aria-haspopup="menu" aria-expanded="false"
-            popovertarget="filter-menu">
-            <span id="filter-count"></span>
+        <details class="column-filter">
+          <summary class="btn" data-filter-trigger aria-haspopup="menu">
+            <span data-filter-count></span>
             <span class="icon icon-lg icon-chevron-down" aria-hidden="true"></span>
-          </button>
+          </summary>
 
-          <div id="filter-menu" class="filter-menu" popover role="menu">
+          <div class="filter-menu" data-filter-menu role="menu">
             <div class="filter-search">
-              <input type="search" class="filter-search-input" aria-label="Filter columns">
+              <input type="search" class="filter-search-input" aria-label="Filter columns" placeholder="Filter...">
             </div>
             <label class="filter-select-all">
-              <input type="checkbox">Select all</label>
-            <div id="filter-options"></div>
+              <input type="checkbox">
+              <span>Select all</span>
+            </label>
+            <div class="filter-options" data-filter-options></div>
           </div>
-        </div>
+        </details>
       </div>
 
-      <div class="table-frame">
-        <div class="table-wrapper">
+      <div class="table-frame" data-table-frame>
+        <div class="table-wrapper" tabindex="0" role="region" aria-label="Data Table">
           <table class="output-table" aria-live="polite">
-            <thead id="table-head"></thead>
-            <tbody id="table-body"></tbody>
+            <thead data-table-head></thead>
+            <tbody data-table-body></tbody>
           </table>
         </div>
       </div>
 
-      <div class="pagination-container">
-        <button type="button" class="pagination-btn" aria-label="First Page">
-          <span class="icon icon-chevrons-left" aria-hidden="true"></span>
-        </button>
-
-        <button type="button" class="pagination-btn" aria-label="Previous Page">
-          <span class="icon icon-chevron-left" aria-hidden="true"></span>
-        </button>
-
-        <button type="button" class="pagination-btn active">1</button>
-        <button type="button" class="pagination-btn">2</button>
-        <button type="button" class="pagination-btn">3</button>
-
-        <button type="button" class="pagination-btn" aria-label="Next Page">
-          <span class="icon icon-chevron-right" aria-hidden="true"></span>
-        </button>
-
-        <button type="button" class="pagination-btn" aria-label="Last Page">
-          <span class="icon icon-chevrons-right" aria-hidden="true"></span>
-        </button>
-      </div>
-
+      <nav class="pagination-container" aria-label="Pagination"></nav>
     </div>
   </main>
 
-  <script src="search.js"></script>
-  <script src="results.js"></script>
-  <script src="filter.js"></script>
-  <script src="pagination.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 
 </html>

@@ -1,14 +1,60 @@
-class SearchApp {
-  constructor() {
-    this.state = {
-      data: [],
-      headers: [],
-      visibleHeaders: new Set(),
-      lastQuery: null,
-    };
+// app.js
+import { SearchBar } from "./search.js";
+import { ResultsGrid } from "./results.js";
+import { ColumnFilter } from "./filter.js";
+import { Pagination } from "./pagination.js";
 
-    this.container = document.getElementById("table-container");
-    this.tableFrame = document.querySelector(".table-frame");
+export class SearchService {
+  constructor(baseUrl = "/search") {
+    this.baseUrl = baseUrl;
+    this.activeController = null;
+  }
+
+  async search(query = "", page = 0, limit = 50) {
+    if (this.activeController) this.activeController.abort();
+
+    this.activeController = new AbortController();
+    const url = `${this.baseUrl}?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`;
+
+    try {
+      const res = await fetch(url, { signal: this.activeController.signal });
+      if (!res.ok) throw new Error(`Search request failed with status: ${res.status}`);
+
+      const json = await res.json();
+      this.activeController = null;
+
+      if (Array.isArray(json)) return { items: json, totalPages: null };
+
+      return {
+        items: json.items || json.data || [],
+        totalPages: typeof json.totalPages === "number" ? json.totalPages : null,
+      };
+    } catch (err) {
+      if (err.name === "AbortError") return { aborted: true, items: [], totalPages: null };
+      this.activeController = null;
+      throw err;
+    }
+  }
+}
+
+const createInitialState = () => ({
+  data: [],
+  headers: [],
+  visibleHeaders: new Set(),
+  lastQuery: null,
+  page: 0,
+  pageSize: 50,
+  totalPages: 5,
+});
+
+export class SearchApp {
+  constructor(searchService = new SearchService()) {
+    this.searchService = searchService;
+    this.state = createInitialState();
+
+    this.container = document.querySelector("[data-table-container]");
+    this.tableFrame = document.querySelector("[data-table-frame]");
+    this.paginationContainer = document.querySelector(".pagination-container");
 
     this.searchBar = new SearchBar(
       document.querySelector(".search-form"),
@@ -17,74 +63,135 @@ class SearchApp {
     );
 
     this.grid = new ResultsGrid(
-      this.state,
       {
         wrapper: document.querySelector(".table-wrapper"),
-        head: document.getElementById("table-head"),
-        body: document.getElementById("table-body"),
+        head: document.querySelector("[data-table-head]"),
+        body: document.querySelector("[data-table-body]"),
       },
-      () => {
-        this.columnFilter.build();
-        this.finishRender();
+      {
+        onHeaderReorder: (newHeaders) => this.handleHeaderReorder(newHeaders),
+        onHeaderAutoFit: (visibleSet) => this.handleHeaderAutoFit(visibleSet),
       },
     );
 
     this.columnFilter = new ColumnFilter(
-      this.state,
       {
-        btn: document.getElementById("filter-btn"),
-        menu: document.getElementById("filter-menu"),
+        btn: document.querySelector("[data-filter-trigger]"),
+        menu: document.querySelector("[data-filter-menu]"),
         selectAll: document.querySelector(".filter-select-all input"),
-        options: document.getElementById("filter-options"),
-        count: document.getElementById("filter-count"),
+        options: document.querySelector("[data-filter-options]"),
+        count: document.querySelector("[data-filter-count]"),
       },
-      () => this.finishRender(),
+      {
+        onToggle: (header, isChecked) => this.handleHeaderToggle(header, isChecked),
+        onToggleAll: (isChecked) => this.handleToggleAllHeaders(isChecked),
+      },
+    );
+
+    this.pagination = new Pagination(
+      this.paginationContainer,
+      (uiPage) => this.handlePageChange(uiPage),
+      this.state.totalPages,
     );
   }
 
   async handleSearch(query) {
-    if (query === this.state.lastQuery) return;
-
     this.state.lastQuery = query;
+    this.state.page = 0;
+    await this.fetchData();
+  }
+
+  async handlePageChange(uiPage) {
+    this.state.page = uiPage - 1;
+    await this.fetchData();
+  }
+
+  handleHeaderToggle(header, isChecked) {
+    const nextVisible = new Set(this.state.visibleHeaders);
+    if (isChecked) nextVisible.add(header);
+    else nextVisible.delete(header);
+
+    this.state.visibleHeaders = nextVisible;
+    this.finishRender();
+  }
+
+  handleToggleAllHeaders(isChecked) {
+    this.state.visibleHeaders = isChecked ? new Set(this.state.headers) : new Set();
+    this.finishRender();
+  }
+
+  handleHeaderReorder(newHeaders) {
+    this.state.headers = newHeaders;
+    this.finishRender();
+  }
+
+  handleHeaderAutoFit(updatedVisibleSet) {
+    this.state.visibleHeaders = updatedVisibleSet;
+    this.columnFilter.render(this.state.headers, this.state.visibleHeaders);
+  }
+
+  async fetchData() {
+    if (this.state.lastQuery === null) return;
+
     this.searchBar.setLoading(true);
 
     try {
-      const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
-      if (!res.ok) throw new Error("Request failed");
-      this.renderResults(await res.json());
+      const response = await this.searchService.search(this.state.lastQuery, this.state.page, this.state.pageSize);
+
+      if (response.aborted) return;
+      this.processSearchResults(response);
     } catch (error) {
-      console.error("Search error:", error);
+      console.error("Search failed:", error);
     } finally {
       this.searchBar.setLoading(false);
     }
   }
 
-  renderResults(data) {
-    const list = Array.isArray(data) ? data : data ? [data] : [];
-    this.state.data = list;
+  processSearchResults({ items, totalPages }) {
+    this.state.data = items;
+    if (totalPages !== null) this.state.totalPages = totalPages;
 
     if (!this.state.data.length) {
-      this.container.style.display = "none";
+      if (this.container) this.container.hidden = true;
+      if (this.paginationContainer) this.paginationContainer.hidden = true;
       return;
     }
 
-    this.state.headers = Object.keys(this.state.data[0]).filter((key) => key !== "_id");
-    this.state.visibleHeaders = new Set(this.state.headers);
-    this.container.style.display = "flex";
+    const incomingHeaders = Object.keys(this.state.data[0]).filter((k) => k !== "_id");
 
-    this.grid.fitHeadersToWidth();
-    this.columnFilter.build();
+    if (!this.state.headers.length) {
+      this.state.headers = incomingHeaders;
+      this.state.visibleHeaders = new Set(incomingHeaders);
+    } else {
+      const preservedHeaders = this.state.headers.filter((h) => incomingHeaders.includes(h));
+      const newHeaders = incomingHeaders.filter((h) => !this.state.headers.includes(h));
+
+      this.state.headers = [...preservedHeaders, ...newHeaders];
+      newHeaders.forEach((h) => this.state.visibleHeaders.add(h));
+    }
+
+    if (this.container) this.container.hidden = false;
+
     this.finishRender();
+    this.grid.fitHeadersToWidth(this.state.headers, this.state.visibleHeaders);
   }
 
   finishRender() {
     const hasColumns = this.state.visibleHeaders.size > 0;
 
-    this.tableFrame.style.display = hasColumns ? "block" : "none";
+    if (this.tableFrame) this.tableFrame.hidden = !hasColumns;
+    if (this.paginationContainer) this.paginationContainer.hidden = !hasColumns;
 
-    this.columnFilter.updateCount();
-    if (hasColumns) this.grid.render();
+    this.columnFilter.render(this.state.headers, this.state.visibleHeaders);
+    this.pagination.render(this.state.page + 1, this.state.totalPages);
+
+    if (hasColumns) this.grid.render(this.state.data, this.state.headers, this.state.visibleHeaders);
   }
 }
 
-new SearchApp();
+const startApp = () => {
+  new SearchApp();
+};
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startApp);
+else startApp();

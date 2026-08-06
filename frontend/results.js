@@ -1,64 +1,31 @@
-class ResultsGrid {
-  constructor(state, elements, onReorder) {
-    this.state = state;
-    this.elements = elements; // { wrapper, head, body }
-    this.onReorder = onReorder;
+export class ResultsGrid {
+  constructor(elements, { onHeaderReorder, onHeaderAutoFit }) {
+    this.elements = elements;
+    this.onHeaderReorder = onHeaderReorder;
+    this.onHeaderAutoFit = onHeaderAutoFit;
     this.pinnedRows = new Set();
-
-    // Header Drag & Drop Listeners
-    this.elements.head.addEventListener("dragstart", (e) => this.handleHeaderDragStart(e));
-    this.elements.head.addEventListener("dragover", (e) => e.preventDefault());
-    this.elements.head.addEventListener("drop", (e) => this.handleHeaderDrop(e));
-
-    // Cell Expansion Delegate
-    this.elements.body.addEventListener("click", (e) => {
-      const td = e.target.closest("td.expandable");
-      if (td) td.querySelector(".cell-content").classList.toggle("expanded");
-    });
-
-    // Row Pinning Delegate (Double Click)
-    this.elements.body.addEventListener("dblclick", (e) => this.handleRowDblClick(e));
+    this.draggedHeader = null;
+    this.currentData = [];
+    this.currentHeaders = [];
+    this.currentVisibleHeaders = new Set();
+    this.initEventListeners();
   }
 
-  handleRowDblClick(e) {
-    const tr = e.target.closest("tr");
-    if (!tr) return;
+  initEventListeners() {
+    if (this.elements.head) {
+      this.elements.head.addEventListener("dragstart", (e) => this.handleHeaderDragStart(e));
+      this.elements.head.addEventListener("dragover", (e) => e.preventDefault());
+      this.elements.head.addEventListener("drop", (e) => this.handleHeaderDrop(e));
+    }
 
-    const index = Number(tr.dataset.rowIndex);
-    const row = this.state.data[index];
-    if (!row) return;
-
-    if (this.pinnedRows.has(row)) {
-      this.pinnedRows.delete(row);
-      this.render();
-    } else {
-      const headerHeight = this.elements.head.offsetHeight;
-      let currentPinnedHeight = 0;
-      this.elements.body.querySelectorAll("tr.pinned").forEach((pinnedTr) => {
-        currentPinnedHeight += pinnedTr.offsetHeight;
+    if (this.elements.body) {
+      this.elements.body.addEventListener("click", (e) => {
+        const td = e.target.closest("td.expandable");
+        if (td) td.querySelector(".cell-content")?.classList.toggle("expanded");
       });
 
-      const wrapperHeight = this.elements.wrapper.clientHeight;
-      const newRowHeight = tr.offsetHeight;
-
-      // Prevent pinning if sticky header + existing pinned rows + new row exceed visible grid height
-      if (headerHeight + currentPinnedHeight + newRowHeight >= wrapperHeight) {
-        return;
-      }
-
-      this.pinnedRows.add(row);
-      this.render();
+      this.elements.body.addEventListener("dblclick", (e) => this.handleRowDblClick(e));
     }
-  }
-
-  getVisibleHeaders() {
-    return this.state.headers.filter((h) => this.state.visibleHeaders.has(h));
-  }
-
-  renderHeadersOnly() {
-    this.elements.head.innerHTML = `<tr>${this.getVisibleHeaders()
-      .map((h) => `<th draggable="true" data-header="${h}">${h.replace(/_/g, " ")}</th>`)
-      .join("")}</tr>`;
   }
 
   handleHeaderDragStart(e) {
@@ -74,8 +41,7 @@ class ResultsGrid {
     if (!th || !this.draggedHeader) return;
 
     const targetHeader = th.dataset.header;
-    const headers = this.state.headers;
-
+    const headers = [...this.currentHeaders];
     const fromIdx = headers.indexOf(this.draggedHeader);
     const toIdx = headers.indexOf(targetHeader);
 
@@ -83,55 +49,101 @@ class ResultsGrid {
 
     headers.splice(fromIdx, 1);
     headers.splice(toIdx, 0, this.draggedHeader);
-
     this.draggedHeader = null;
-    this.onReorder();
+    this.onHeaderReorder(headers);
   }
 
-  fitHeadersToWidth() {
-    this.renderHeadersOnly();
-    while (
-      this.elements.wrapper.scrollWidth > this.elements.wrapper.clientWidth &&
-      this.state.visibleHeaders.size > 1
-    ) {
-      const lastVisible = [...this.state.visibleHeaders].pop();
-      this.state.visibleHeaders.delete(lastVisible);
-      this.renderHeadersOnly();
+  handleRowDblClick(e) {
+    const tr = e.target.closest("tr");
+    if (!tr) return;
+
+    const targetItem = this.getRenderedRows().find((item) => String(item.row.id) === tr.dataset.rowId);
+    if (!targetItem) return;
+
+    if (this.pinnedRows.has(targetItem.row)) {
+      this.pinnedRows.delete(targetItem.row);
+      this.render(this.currentData, this.currentHeaders, this.currentVisibleHeaders);
+      return;
     }
+
+    const headerHeight = this.elements.head?.offsetHeight || 0;
+    let currentPinnedHeight = 0;
+    this.elements.body?.querySelectorAll("tr.pinned").forEach((pTr) => (currentPinnedHeight += pTr.offsetHeight));
+
+    const wrapperHeight = this.elements.wrapper?.clientHeight || 0;
+    if (headerHeight + currentPinnedHeight + tr.offsetHeight >= wrapperHeight) return;
+
+    this.pinnedRows.add(targetItem.row);
+    this.render(this.currentData, this.currentHeaders, this.currentVisibleHeaders);
   }
 
-  render() {
-    this.renderHeadersOnly();
-    const visible = this.getVisibleHeaders();
+  getVisibleHeaders(headers, visibleHeaders) {
+    return headers.filter((h) => visibleHeaders.has(h));
+  }
 
-    // Clean up stale pinned row references if state data refreshed
-    this.pinnedRows = new Set([...this.pinnedRows].filter((r) => this.state.data.includes(r)));
+  renderHeadersOnly(visible) {
+    if (!this.elements.head) return;
+    this.elements.head.innerHTML = `<tr>${visible.map((h) => `<th draggable="true" data-header="${h}">${h.replace(/_/g, " ")}</th>`).join("")}</tr>`;
+  }
 
-    // Separate pinned and unpinned rows while preserving original data indices
-    const rowsWithIndex = this.state.data.map((row, index) => ({ row, index }));
-    const pinned = rowsWithIndex.filter(({ row }) => this.pinnedRows.has(row));
-    const unpinned = rowsWithIndex.filter(({ row }) => !this.pinnedRows.has(row));
+  fitHeadersToWidth(headers, visibleHeaders) {
+    if (!this.elements.wrapper || this.elements.wrapper.clientWidth === 0) return;
 
-    const orderedRows = [...pinned, ...unpinned];
+    const visibleSet = new Set(visibleHeaders);
+    let activeVisible = this.getVisibleHeaders(headers, visibleSet);
+    this.renderHeadersOnly(activeVisible);
 
-    this.elements.body.innerHTML = orderedRows
-      .map(
-        ({ row, index }) => `
-        <tr data-row-index="${index}" class="${this.pinnedRows.has(row) ? "pinned" : ""}">
+    let changed = false;
+    while (
+      this.elements.wrapper.clientWidth > 0 &&
+      this.elements.wrapper.scrollWidth > this.elements.wrapper.clientWidth &&
+      visibleSet.size > 1
+    ) {
+      visibleSet.delete([...visibleSet].pop());
+      activeVisible = this.getVisibleHeaders(headers, visibleSet);
+      this.renderHeadersOnly(activeVisible);
+      changed = true;
+    }
+
+    if (changed) this.onHeaderAutoFit(visibleSet);
+  }
+
+  getRenderedRows() {
+    const pinnedList = Array.from(this.pinnedRows).map((row) => ({ row, isPinned: true }));
+    const unpinnedList = this.currentData
+      .filter((row) => !this.pinnedRows.has(row))
+      .map((row) => ({ row, isPinned: false }));
+    return [...pinnedList, ...unpinnedList];
+  }
+
+  render(data = [], headers = [], visibleHeaders = new Set()) {
+    this.currentData = data;
+    this.currentHeaders = headers;
+    this.currentVisibleHeaders = visibleHeaders;
+
+    const visible = this.getVisibleHeaders(headers, visibleHeaders);
+    this.renderHeadersOnly(visible);
+
+    if (this.elements.body) {
+      this.elements.body.innerHTML = this.getRenderedRows()
+        .map(
+          ({ row, isPinned }) => `
+        <tr data-row-id="${row.id}" class="${isPinned ? "pinned" : ""}">
           ${visible.map((h) => `<td><div class="cell-content">${row[h] ?? ""}</div></td>`).join("")}
         </tr>`,
-      )
-      .join("");
+        )
+        .join("");
+    }
 
     this.applyStickyPinnedOffsets();
     this.markTruncatedCells();
   }
 
   applyStickyPinnedOffsets() {
+    if (!this.elements.head || !this.elements.body) return;
     let currentTop = this.elements.head.offsetHeight;
-    const pinnedTrs = this.elements.body.querySelectorAll("tr.pinned");
 
-    pinnedTrs.forEach((tr) => {
+    this.elements.body.querySelectorAll("tr.pinned").forEach((tr) => {
       tr.style.position = "sticky";
       tr.style.top = `${currentTop}px`;
       tr.style.zIndex = "2";
@@ -140,8 +152,11 @@ class ResultsGrid {
   }
 
   markTruncatedCells() {
-    this.elements.body.querySelectorAll(".cell-content").forEach((content) => {
-      content.parentElement.classList.toggle("expandable", content.scrollHeight > content.clientHeight);
+    if (!this.elements.body) return;
+    requestAnimationFrame(() => {
+      this.elements.body.querySelectorAll(".cell-content").forEach((content) => {
+        content.parentElement?.classList.toggle("expandable", content.scrollHeight > content.clientHeight);
+      });
     });
   }
 }

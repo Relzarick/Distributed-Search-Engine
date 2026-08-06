@@ -28,10 +28,21 @@
 }
 
 .search-container {
-  width: min(90%, 80rem);
+  width: min(90%, var(--max-width-search));
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-inline: auto;
+}
+/* =========================================
+   SEARCH BAR
+   ========================================= */
+.search-container {
+  width: min(90%, var(--max-width-search));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-inline: auto;
 }
 
 .search-form {
@@ -69,46 +80,28 @@
     color: var(--text-primary);
     font-size: 2rem;
     outline: none;
-    transition:
-      background-color var(--theme-transition),
-      border-color var(--theme-transition),
-      color var(--theme-transition);
 
     &::placeholder {
       color: var(--text-secondary);
     }
 
     &:hover {
-      border-color: color-mix(
-        in srgb,
-        var(--border-color) 60%,
-        var(--color-accent)
-      );
+      border-color: color-mix(in srgb, var(--border-color) 60%, var(--color-accent));
     }
   }
 }
 
-input[type="search"]::-webkit-search-cancel-button {
-  appearance: none;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background-color: var(--text-secondary);
-  opacity: 0.65;
-  cursor: pointer;
-  transition:
-    background-color var(--theme-transition),
-    opacity var(--theme-transition);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E")
-    center / 1.2rem no-repeat;
+@keyframes spin {
+  0% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-50%) rotate(360deg);
+  }
 }
 
-input[type="search"]::-webkit-search-cancel-button:hover {
+.search-form.loading::before {
   background-color: var(--color-accent);
-  opacity: 1;
-}
-
-.output {
-  margin-block-start: var(--spacing-layout);
-  width: 100%;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-6.219-8.56'/%3E%3C/svg%3E");
+  animation: spin 1s linear infinite;
 }
