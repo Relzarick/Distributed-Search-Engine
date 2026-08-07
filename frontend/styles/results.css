@@ -49,6 +49,8 @@
   border-radius: var(--radius);
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 /* =========================================
@@ -146,6 +148,7 @@
   border-collapse: separate;
   border-spacing: 0;
   text-align: left;
+  flex: 1;
 }
 
 .output-table th,
@@ -309,4 +312,25 @@ td.expandable {
 
 .table-container.is-fullscreen .pagination-container {
   margin-bottom: 0;
+}
+/* =========================================
+   EMPTY STATE
+   ========================================= */
+.output-table:has(.no-results) {
+  height: 100%;
+}
+
+.output-table:has(.no-results) tbody {
+  height: 100%;
+}
+
+.output-table td.no-results {
+  vertical-align: top !important;
+  text-align: center;
+  padding-top: 3rem;
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: var(--bg-main);
+  border-bottom: none;
 }

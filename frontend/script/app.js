@@ -102,7 +102,7 @@ export class SearchApp {
       alignTo: $(".table-frame"),
     });
 
-    this.valueFilter.elements.menu.addEventListener("value-filter-change", (e) => {
+    this.valueFilter.elements.menu?.addEventListener("value-filter-change", (e) => {
       this.handleValueFilterChange(e.detail.header, e.detail.filter);
     });
 
@@ -151,6 +151,7 @@ export class SearchApp {
 
   handleValueFilterChange(header, filter) {
     filter ? this.state.activeFilterHeaders.add(header) : this.state.activeFilterHeaders.delete(header);
+    this.renderGrid();
   }
 
   handleHeaderReorder(newHeaders) {
@@ -230,6 +231,14 @@ export class SearchApp {
     this.grid.fitHeadersToWidth(this.state.headers, this.state.visibleHeaders);
   }
 
+  renderGrid() {
+    const hasColumns = this.state.visibleHeaders.size > 0;
+    if (!hasColumns) return;
+
+    const filteredData = this.valueFilter.filterData(this.state.data);
+    this.grid.render(filteredData, this.state.headers, this.state.visibleHeaders);
+  }
+
   finishRender() {
     const hasColumns = this.state.visibleHeaders.size > 0;
 
@@ -240,7 +249,7 @@ export class SearchApp {
     this.valueFilter.render(this.state.headers);
     this.pagination.render(this.state.page + 1, this.state.totalPages);
 
-    if (hasColumns) if (hasColumns) this.grid.render(this.state.data, this.state.headers, this.state.visibleHeaders);
+    if (hasColumns) this.renderGrid();
   }
 }
 

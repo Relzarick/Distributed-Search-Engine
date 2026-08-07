@@ -77,3 +77,15 @@
   width: 2.5rem;
   height: 2.5rem;
 }
+
+/* =========================================
+   CHEVRON STATES
+   ========================================= */
+.icon-chevron-down {
+  transition: transform var(--theme-transition-quick, 0.2s ease);
+}
+
+[aria-expanded="true"] .icon-chevron-down,
+.value-field.is-active .icon-chevron-down {
+  transform: rotate(180deg);
+}

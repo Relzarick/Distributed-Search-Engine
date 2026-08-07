@@ -50,16 +50,13 @@ export class BaseFilter {
 
     const viewportWidth = document.documentElement.clientWidth;
 
-    // Use alignTo target (e.g., .table-frame) if available, fallback to button
     const hasAlignTo = Boolean(this.elements.alignTo?.getClientRects().length);
     const alignEl = hasAlignTo ? this.elements.alignTo : this.elements.btn;
     const alignRect = alignEl.getBoundingClientRect();
 
-    // 1. Align Y-position directly to the top edge of the table element
-    const marginTop = 0; // Set to 0 for flush alignment, or add px offset if needed
+    const marginTop = 0;
     const top = alignRect.top + marginTop;
 
-    // 2. Account for scrollbar width inside the table wrapper
     const scrollEl = alignEl.querySelector(".table-wrapper") || alignEl;
     let scrollbarWidth = 0;
 
@@ -71,7 +68,6 @@ export class BaseFilter {
       scrollbarWidth = Math.max(0, widthDiff);
     }
 
-    // 3. Align X-position to the right edge of the table element
     const baseRight = Math.max(0, viewportWidth - alignRect.right);
     const right = baseRight + scrollbarWidth;
 
@@ -93,19 +89,13 @@ export class ColumnFilter extends BaseFilter {
     this.onToggle = onToggle;
     this.onToggleAll = onToggleAll;
     this.searchInput = this.elements.menu?.querySelector(".filter-search-input");
-    this.chevron = this.elements.btn?.querySelector(".filter-chevron");
-    this.spin = 0;
     this.initEventListeners();
   }
 
   initEventListeners() {
-    this.initToggleListener(
-      () => this.spinChevron(),
-      () => {
-        this.spinChevron();
-        this.resetSearchFilter();
-      },
-    );
+    this.initToggleListener(null, () => {
+      this.resetSearchFilter();
+    });
 
     const handleInput = () => this.filterOptionsInDom();
     this.searchInput?.addEventListener("input", handleInput);
@@ -130,11 +120,6 @@ export class ColumnFilter extends BaseFilter {
         );
       }
     });
-  }
-
-  spinChevron() {
-    this.spin += 180;
-    if (this.chevron) this.chevron.style.setProperty("--spin", `${this.spin}deg`);
   }
 
   render(headers = [], visibleHeaders = new Set()) {
@@ -326,8 +311,8 @@ export class ValueFilter extends BaseFilter {
     const operatorOptions =
       type === "string"
         ? `
-          <option value="contains" ${filter?.mode === "contains" ? "selected" : ""}>~</option>
-          <option value="eq" ${filter?.mode === "eq" ? "selected" : ""}>=</option>`
+          <option value="contains" ${filter?.mode === "contains" ? "selected" : ""}>∈</option>
+          <option value="exclude" ${filter?.mode === "exclude" ? "selected" : ""}>∉</option>`
         : `
           <option value="eq" ${filter?.mode === "eq" ? "selected" : ""}>=</option>
           <option value="lt" ${filter?.mode === "lt" ? "selected" : ""}>&lt;</option>
@@ -355,9 +340,7 @@ export class ValueFilter extends BaseFilter {
           <button type="button" class="value-chip" data-header="${safeHeader}">
             <span class="value-chip-label">
               <span>${header.replace(/_/g, " ")}</span>
-              <svg class="filter-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              <span class="icon icon-chevron-down"></span>
             </span>
           </button>
           ${refreshBtnHtml}
@@ -390,5 +373,98 @@ export class ValueFilter extends BaseFilter {
 
     const currentSearch = this.elements.menu.querySelector(".filter-search-input")?.value;
     if (currentSearch) this.handleSearchInput(currentSearch);
+  }
+
+  filterData(data = []) {
+    if (!this.activeHeaders.size) return data;
+    return data.filter((row) => this.matchesRow(row));
+  }
+
+  matchesRow(row) {
+    if (!row) return false;
+    for (const header of this.activeHeaders) {
+      const filter = this.filters.get(header);
+      if (!filter) continue;
+
+      const type = this.schema.get(header) || "string";
+      const val = row[header];
+
+      if (!this.evaluateValue(val, filter, type)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  evaluateValue(val, filter, type) {
+    if (type === "number") return this.evaluateNumber(val, filter);
+    if (type === "date") return this.evaluateDate(val, filter);
+    return this.evaluateString(val, filter);
+  }
+
+  evaluateString(val, filter) {
+    const target = (filter.value ?? "").toString().trim().toLowerCase();
+    if (!target) return true;
+
+    const cellVal = (val ?? "").toString().toLowerCase();
+    if (filter.mode === "exclude") {
+      return !cellVal.includes(target);
+    }
+    return cellVal.includes(target);
+  }
+
+  evaluateNumber(val, filter) {
+    const numVal = Number(val);
+    const isNumValid = val !== null && val !== "" && !isNaN(numVal);
+
+    if (filter.mode === "range") {
+      const minHasVal = filter.min !== null && filter.min !== "";
+      const maxHasVal = filter.max !== null && filter.max !== "";
+      if (!minHasVal && !maxHasVal) return true;
+
+      if (!isNumValid) return false;
+      if (minHasVal && numVal < Number(filter.min)) return false;
+      if (maxHasVal && numVal > Number(filter.max)) return false;
+      return true;
+    }
+
+    const targetHasVal = filter.value !== null && filter.value !== "";
+    if (!targetHasVal) return true;
+
+    if (!isNumValid) return false;
+    const targetNum = Number(filter.value);
+
+    if (filter.mode === "lt") return numVal < targetNum;
+    if (filter.mode === "gt") return numVal > targetNum;
+    return numVal === targetNum;
+  }
+
+  evaluateDate(val, filter) {
+    const cellTime = val ? new Date(val).getTime() : NaN;
+    const isDateValid = !isNaN(cellTime);
+
+    if (filter.mode === "range") {
+      const minHasVal = Boolean(filter.min);
+      const maxHasVal = Boolean(filter.max);
+      if (!minHasVal && !maxHasVal) return true;
+
+      if (!isDateValid) return false;
+      if (minHasVal && cellTime < new Date(filter.min).getTime()) return false;
+      if (maxHasVal && cellTime > new Date(filter.max).getTime()) return false;
+      return true;
+    }
+
+    const targetHasVal = Boolean(filter.value);
+    if (!targetHasVal) return true;
+
+    if (!isDateValid) return false;
+    const targetTime = new Date(filter.value).getTime();
+
+    if (filter.mode === "lt") return cellTime < targetTime;
+    if (filter.mode === "gt") return cellTime > targetTime;
+
+    const cellDateStr = new Date(cellTime).toISOString().slice(0, 10);
+    const targetDateStr = new Date(targetTime).toISOString().slice(0, 10);
+    return cellDateStr === targetDateStr;
   }
 }
