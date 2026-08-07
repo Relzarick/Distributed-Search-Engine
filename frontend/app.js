@@ -1,6 +1,6 @@
 import { SearchBar } from "./search.js";
-import { ResultsGrid } from "./results.js";
-import { ColumnFilter } from "./filter.js";
+import { ResultsTable } from "./results.js";
+import { ColumnFilter, ValueFilter } from "./filter.js";
 import { Pagination } from "./pagination.js";
 import { StatusNotifier, NotificationSource } from "./notifier.js";
 
@@ -11,13 +11,13 @@ export class SearchService {
   }
 
   async search(query = "", page = 0, limit = 50) {
-    if (this.activeController) this.activeController.abort();
-
+    this.activeController?.abort();
     this.activeController = new AbortController();
-    const url = `${this.baseUrl}?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`;
+
+    const params = new URLSearchParams({ q: query, page, limit });
 
     try {
-      const res = await fetch(url, { signal: this.activeController.signal });
+      const res = await fetch(`${this.baseUrl}?${params}`, { signal: this.activeController.signal });
       if (!res.ok) throw new Error(`Search request failed with status: ${res.status}`);
 
       const json = await res.json();
@@ -41,39 +41,38 @@ const createInitialState = () => ({
   data: [],
   headers: [],
   visibleHeaders: new Set(),
+  activeFilterHeaders: new Set(),
   lastQuery: null,
   page: 0,
   pageSize: 50,
   totalPages: 5,
 });
 
+const $ = (selector) => document.querySelector(selector);
+
 export class SearchApp {
   constructor(searchService = new SearchService()) {
     this.searchService = searchService;
     this.state = createInitialState();
 
-    this.container = document.querySelector("[data-table-container]");
-    this.tableFrame = document.querySelector("[data-table-frame]");
-    this.paginationContainer = document.querySelector(".pagination-container");
-    this.fullscreenBtn = document.querySelector(".btn-fullscreen");
-    this.headerNotice = document.querySelector(".header-notice");
+    this.container = $("[data-table-container]");
+    this.tableFrame = $("[data-table-frame]");
+    this.paginationContainer = $(".pagination-container");
+    this.fullscreenBtn = $(".btn-fullscreen");
+    this.headerNotice = $(".header-notice");
 
-    this.notifier = new StatusNotifier(document.querySelector("[data-toolbar-status]"));
+    this.notifier = new StatusNotifier($("[data-toolbar-status]"));
 
-    this.searchBar = new SearchBar(
-      document.querySelector(".search-form"),
-      document.querySelector('input[name="query"]'),
-      (query) => this.handleSearch(query),
-    );
+    this.searchBar = new SearchBar($(".search-form"), $('input[name="query"]'), (query) => this.handleSearch(query));
 
-    this.grid = new ResultsGrid(
+    this.grid = new ResultsTable(
       {
-        wrapper: document.querySelector(".table-wrapper"),
-        head: document.querySelector("[data-table-head]"),
-        body: document.querySelector("[data-table-body]"),
+        wrapper: $(".table-wrapper"),
+        head: $("[data-table-head]"),
+        body: $("[data-table-body]"),
       },
       {
-        onHeaderReorder: (newHeaders) => this.handleHeaderReorder(newHeaders),
+        onHeaderReorder: (headers) => this.handleHeaderReorder(headers),
         onHeaderAutoFit: (visibleSet) => this.handleHeaderAutoFit(visibleSet),
         onRowCopy: (row) => {
           navigator.clipboard.writeText(JSON.stringify(row, null, 2));
@@ -84,22 +83,32 @@ export class SearchApp {
 
     this.columnFilter = new ColumnFilter(
       {
-        btn: document.querySelector(".btn-filter"),
-        menu: document.querySelector(".filter-menu"),
-        selectAll: document.querySelector(".filter-select-all input"),
-        options: document.querySelector(".filter-options"),
-        count: document.querySelector(".filter-count"),
-        alignTo: document.querySelector(".table-frame"),
+        btn: $(".btn-filter"),
+        menu: $(".filter-menu"),
+        selectAll: $(".filter-select-all input"),
+        options: $(".filter-options"),
+        count: $(".filter-count"),
+        alignTo: $(".table-frame"),
       },
       {
-        onToggle: (header, isChecked) => this.handleHeaderToggle(header, isChecked),
-        onToggleAll: (isChecked) => this.handleToggleAllHeaders(isChecked),
+        onToggle: (header, checked) => this.handleHeaderToggle(header, checked),
+        onToggleAll: (checked) => this.handleToggleAllHeaders(checked),
       },
     );
 
+    this.valueFilter = new ValueFilter({
+      btn: $('[popovertarget="value-menu"]'),
+      menu: $(".value-menu"),
+      alignTo: $(".table-frame"),
+    });
+
+    this.valueFilter.elements.menu.addEventListener("value-filter-change", (e) => {
+      this.handleValueFilterChange(e.detail.header, e.detail.filter);
+    });
+
     this.pagination = new Pagination(
       this.paginationContainer,
-      (uiPage) => this.handlePageChange(uiPage),
+      (page) => this.handlePageChange(page),
       this.state.totalPages,
     );
 
@@ -109,7 +118,7 @@ export class SearchApp {
   toggleFullscreen() {
     if (!this.container) return;
     const isFullscreen = this.container.classList.toggle("is-fullscreen");
-    this.fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
+    if (this.fullscreenBtn) this.fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
     document.body.classList.toggle("no-scroll", isFullscreen);
 
     requestAnimationFrame(() => {
@@ -131,17 +140,17 @@ export class SearchApp {
   }
 
   handleHeaderToggle(header, isChecked) {
-    const nextVisible = new Set(this.state.visibleHeaders);
-    if (isChecked) nextVisible.add(header);
-    else nextVisible.delete(header);
-
-    this.state.visibleHeaders = nextVisible;
+    isChecked ? this.state.visibleHeaders.add(header) : this.state.visibleHeaders.delete(header);
     this.finishRender();
   }
 
   handleToggleAllHeaders(isChecked) {
     this.state.visibleHeaders = isChecked ? new Set(this.state.headers) : new Set();
     this.finishRender();
+  }
+
+  handleValueFilterChange(header, filter) {
+    filter ? this.state.activeFilterHeaders.add(header) : this.state.activeFilterHeaders.delete(header);
   }
 
   handleHeaderReorder(newHeaders) {
@@ -161,9 +170,7 @@ export class SearchApp {
 
     try {
       const response = await this.searchService.search(this.state.lastQuery, this.state.page, this.state.pageSize);
-
-      if (response.aborted) return;
-      this.processSearchResults(response);
+      if (!response.aborted) this.processSearchResults(response);
     } catch (error) {
       console.error("Search failed:", error);
     } finally {
@@ -171,30 +178,53 @@ export class SearchApp {
     }
   }
 
+  detectSchema(headers, sampleRow) {
+    if (!sampleRow) return new Map();
+    const schema = new Map();
+
+    headers.forEach((header) => {
+      const val = sampleRow[header];
+      let type = "string";
+
+      if (typeof val === "number") type = "number";
+      else if (val instanceof Date) type = "date";
+      else if (
+        typeof val === "string" &&
+        isNaN(Number(val)) &&
+        !isNaN(Date.parse(val)) &&
+        (val.includes("-") || val.includes("/"))
+      )
+        type = "date";
+
+      schema.set(header, type);
+    });
+
+    return schema;
+  }
+
   processSearchResults({ items, totalPages }) {
     this.state.data = items;
     if (totalPages !== null) this.state.totalPages = totalPages;
 
-    if (!this.state.data.length) {
-      if (this.container) this.container.hidden = true;
-      if (this.paginationContainer) this.paginationContainer.hidden = true;
-      return;
-    }
+    const hasData = Boolean(this.state.data.length);
+    if (this.container) this.container.hidden = !hasData;
+    if (this.paginationContainer) this.paginationContainer.hidden = !hasData;
+    if (!hasData) return;
 
-    const incomingHeaders = Object.keys(this.state.data[0]).filter((k) => k !== "_id");
+    const incomingHeaders = Object.keys(items[0]).filter((k) => k !== "_id");
 
     if (!this.state.headers.length) {
       this.state.headers = incomingHeaders;
       this.state.visibleHeaders = new Set(incomingHeaders);
     } else {
-      const preservedHeaders = this.state.headers.filter((h) => incomingHeaders.includes(h));
+      const preserved = this.state.headers.filter((h) => incomingHeaders.includes(h));
       const newHeaders = incomingHeaders.filter((h) => !this.state.headers.includes(h));
 
-      this.state.headers = [...preservedHeaders, ...newHeaders];
+      this.state.headers = [...preserved, ...newHeaders];
       newHeaders.forEach((h) => this.state.visibleHeaders.add(h));
     }
 
-    if (this.container) this.container.hidden = false;
+    this.valueFilter.schema = this.detectSchema(this.state.headers, items[0]);
 
     this.finishRender();
     this.grid.fitHeadersToWidth(this.state.headers, this.state.visibleHeaders);
@@ -207,15 +237,14 @@ export class SearchApp {
     if (this.paginationContainer) this.paginationContainer.hidden = !hasColumns;
 
     this.columnFilter.render(this.state.headers, this.state.visibleHeaders);
+    this.valueFilter.render(this.state.headers);
     this.pagination.render(this.state.page + 1, this.state.totalPages);
 
-    if (hasColumns) this.grid.render(this.state.data, this.state.headers, this.state.visibleHeaders);
+    if (hasColumns) if (hasColumns) this.grid.render(this.state.data, this.state.headers, this.state.visibleHeaders);
   }
 }
 
-const startApp = () => {
-  new SearchApp();
-};
+const startApp = () => new SearchApp();
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startApp);
 else startApp();

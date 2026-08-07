@@ -14,12 +14,12 @@
   border-radius: var(--radius);
   cursor: pointer;
   transition:
-    background-color var(--theme-transition),
-    border-color var(--theme-transition);
+    background-color var(--theme-transition-quick),
+    border-color var(--theme-transition-quick);
 }
 
 .btn-filter:hover {
-  border-color: var(--color-accent);
+  border-color: var(--text-primary);
 }
 
 .btn-filter:focus-visible {
@@ -30,17 +30,17 @@
   font-size: inherit;
 }
 
-/* Chevron icon animation on open */
 .filter-chevron {
-  --spin: 0deg;
-  transform: rotate(var(--spin));
-  transition: transform var(--theme-transition);
+  transition: transform var(--theme-transition-quick);
+  flex-shrink: 0;
 }
 
 /* =========================================
-   COLUMN FILTER — DROPDOWN MENU
+   COLUMN & VALUE FILTERS — DROPDOWN MENUS
    ========================================= */
-.filter-menu {
+.filter-menu,
+.value-menu {
+  position: absolute;
   inset: auto;
   left: auto;
   bottom: auto;
@@ -50,7 +50,7 @@
 
   flex-direction: column;
   gap: var(--spacing-sm);
-  min-width: 24rem;
+  max-width: calc(100vw - 3.2rem);
   max-height: 40vh;
   padding: var(--spacing-md);
   overflow-y: auto;
@@ -64,7 +64,16 @@
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
 }
 
-.filter-menu:popover-open {
+.filter-menu {
+  width: var(--max-width-column-filter);
+}
+
+.value-menu {
+  width: var(--max-width-value-filter);
+}
+
+.filter-menu:popover-open,
+.value-menu:popover-open {
   display: flex;
 }
 
@@ -89,7 +98,7 @@
     mask-size: contain;
     mask-repeat: no-repeat;
     mask-position: center;
-    transition: background-color var(--theme-transition);
+    transition: background-color var(--theme-transition-quick);
     pointer-events: none;
   }
 
@@ -100,12 +109,12 @@
 
 .filter-search-input {
   flex: 1;
-  padding: 0.5rem 3.6rem 0.5rem 1.6rem;
+  padding: 0.6rem 3.6rem 0.6rem 1.6rem;
   background-color: color-mix(in srgb, var(--bg-card) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   outline: none;
 
   &::placeholder {
@@ -113,7 +122,7 @@
   }
 
   &:hover {
-    border-color: color-mix(in srgb, var(--border-color) 60%, var(--color-accent));
+    border-color: var(--text-primary);
   }
 }
 
@@ -127,18 +136,18 @@
   gap: var(--spacing-sm);
   color: var(--text-primary);
   cursor: pointer;
-  transition: color var(--theme-transition);
+  transition: color var(--theme-transition-quick);
 }
 
 .filter-select-all {
   padding-left: 0;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 600;
 }
 
 .filter-label {
   padding-left: 2rem;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   text-transform: capitalize;
 }
 
@@ -155,10 +164,203 @@
   flex-direction: column;
   gap: 0.8rem;
 }
+
 /* =========================================
-   TOOLBAR — FULLSCREEN TOGGLE
+   VALUE FILTER — CONTAINER & POPOVER
    ========================================= */
-.icon-fullscreen {
-  width: 2.5rem;
-  height: 2.5rem;
+.value-filter {
+  position: relative;
+}
+
+.value-filter .btn-icon {
+  padding: 1.4rem 1.2rem;
+}
+
+.value-fields-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+/* =========================================
+   VALUE FILTER — VERTICAL PARENT CARD
+   ========================================= */
+.value-field {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+
+  background-color: var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: var(--radius);
+
+  opacity: 0.55;
+  transition:
+    opacity var(--theme-transition-quick),
+    border-color var(--theme-transition-quick);
+}
+
+.value-field:hover {
+  opacity: 0.85;
+  border-color: var(--text-secondary);
+}
+
+.value-field.is-active {
+  opacity: 1;
+  border-color: var(--text-primary);
+}
+
+.value-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.value-chip {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.value-chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.value-field.is-active .filter-chevron {
+  transform: rotate(180deg);
+}
+
+.value-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color var(--theme-transition-quick);
+  flex-shrink: 0;
+}
+
+.value-refresh-btn:hover {
+  color: var(--text-primary);
+}
+
+/* =========================================
+   VALUE FILTER — DROPDOWN CHILD PANEL
+   ========================================= */
+.value-field-child {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1.2rem 1.2rem 1.2rem;
+  width: 100%;
+  box-sizing: border-box;
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+}
+
+/* =========================================
+   VALUE FILTER — OPERATOR SELECT
+   ========================================= */
+.value-field-operator {
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding: 0.6rem 0.8rem;
+  color: var(--text-primary);
+  background-color: color-mix(in srgb, var(--bg-main) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-radius: var(--radius);
+  cursor: pointer;
+  outline: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  text-align: center;
+  width: 3.6rem;
+  flex-shrink: 0;
+  transition: all var(--theme-transition-quick);
+}
+
+.value-field-operator:hover {
+  background-color: var(--bg-main);
+  border-color: color-mix(in srgb, var(--border-color) 90%, transparent);
+}
+
+.value-field-operator:focus {
+  border-color: var(--text-primary);
+}
+
+.value-field-operator option {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.value-field-inputs {
+  display: flex;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+/* =========================================
+   VALUE FILTER — INPUT FIELDS
+   ========================================= */
+.value-field-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1.4rem;
+  padding: 0.6rem 0.6rem;
+  color: var(--text-primary);
+  background-color: color-mix(in srgb, var(--bg-main) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-radius: var(--radius);
+  outline: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  transition: all var(--theme-transition-quick);
+}
+
+.value-field-input:hover {
+  background-color: var(--bg-main);
+  border-color: color-mix(in srgb, var(--border-color) 90%, transparent);
+}
+
+.value-field-input:focus {
+  background-color: var(--bg-card);
+  border-color: var(--text-primary);
+}
+
+.value-field-input[type="number"]::-webkit-outer-spin-button,
+.value-field-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.value-field-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

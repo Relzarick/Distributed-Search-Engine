@@ -66,10 +66,10 @@ export class Pagination {
     this.container.innerHTML = `
       <div class="pagination-group pagination-controls">
         <button type="button" class="pagination-btn pagination-btn-nav" data-action="first" aria-label="First Page" ${this.currentPage === 1 ? "disabled" : ""}>
-          <span class="icon icon-chevrons-left" aria-hidden="true"></span>
+          <span class="icon icon-sm icon-chevrons-left" aria-hidden="true"></span>
         </button>
         <button type="button" class="pagination-btn pagination-btn-nav" data-action="prev" aria-label="Previous Page" ${this.currentPage === 1 ? "disabled" : ""}>
-          <span class="icon icon-chevron-left" aria-hidden="true"></span>
+          <span class="icon icon-sm icon-chevron-left" aria-hidden="true"></span>
         </button>
       </div>
 
@@ -77,10 +77,10 @@ export class Pagination {
 
       <div class="pagination-group pagination-controls">
         <button type="button" class="pagination-btn pagination-btn-nav" data-action="next" aria-label="Next Page" ${this.currentPage === this.totalPages ? "disabled" : ""}>
-          <span class="icon icon-chevron-right" aria-hidden="true"></span>
+          <span class="icon icon-sm icon-chevron-right" aria-hidden="true"></span>
         </button>
         <button type="button" class="pagination-btn pagination-btn-nav" data-action="last" aria-label="Last Page" ${this.currentPage === this.totalPages ? "disabled" : ""}>
-          <span class="icon icon-chevrons-right" aria-hidden="true"></span>
+          <span class="icon icon-sm icon-chevrons-right" aria-hidden="true"></span>
         </button>
       </div>`;
 

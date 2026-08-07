@@ -36,6 +36,8 @@ html {
 
   --max-width-search: 80rem;
   --max-width-table: 168rem;
+  --max-width-column-filter: 32rem;
+  --max-width-value-filter: 36rem;
 
   --radius: 1rem;
   --spacing-sm: 1.2rem;

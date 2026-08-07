@@ -29,7 +29,7 @@
   pointer-events: none;
   opacity: 0;
   white-space: nowrap;
-  transition: opacity var(--theme-transition);
+  transition: opacity var(--theme-transition-quick);
 }
 
 .toolbar-status.is-visible {
@@ -50,6 +50,7 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
 }
+
 /* =========================================
    FLOATING PIN COPY BUTTONS (OUTSIDE TABLE)
    ========================================= */
@@ -61,7 +62,7 @@
   bottom: 0;
   pointer-events: none;
   z-index: 10;
-  overflow: hidden; /* Fixes phantom bottom margin from offscreen absolute children */
+  overflow: hidden;
 }
 
 .pin-copy-item {
@@ -75,8 +76,8 @@
   opacity: 0;
   visibility: hidden;
   transition:
-    opacity var(--theme-transition),
-    visibility var(--theme-transition);
+    opacity var(--theme-transition-quick),
+    visibility var(--theme-transition-quick);
 }
 
 .pin-copy-item.is-active,
@@ -96,23 +97,18 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: color var(--theme-transition);
-}
-
-.btn-pin-copy .icon {
-  width: 2.2rem;
-  height: 2.2rem;
+  transition: color var(--theme-transition-quick);
 }
 
 .btn-pin-copy:hover {
   color: var(--color-accent);
 }
+
 /* =========================================
-   DRAGGABLE HANDLES (shared: headers + pin handle)
+   DRAGGABLE HANDLES
    ========================================= */
 .draggable-handle {
   cursor: grab;
-  background-color: color-mix(in srgb, var(--bg-main) 60%, var(--bg-card));
 }
 
 .draggable-handle:active {
@@ -137,7 +133,7 @@
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--theme-transition);
+  transition: all var(--theme-transition-quick);
 }
 
 .btn:hover {
@@ -264,6 +260,7 @@ td.expandable {
   background: transparent;
   border: none;
   cursor: pointer;
+  transition: color var(--theme-transition-quick);
 }
 
 .pagination-btn:hover:not(:disabled),

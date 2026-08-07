@@ -60,6 +60,13 @@ header {
   }
 }
 
+.notice-icon {
+  display: inline-block;
+  width: 1.4rem;
+  height: 1.4rem;
+  vertical-align: -0.2rem;
+}
+
 .search-container {
   width: min(90%, var(--max-width-search));
   display: flex;

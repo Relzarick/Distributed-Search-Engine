@@ -21,40 +21,46 @@
     <div class="top-nav-actions">
       <a href="https://github.com/Relzarick/Distributed-Search-Engine" target="_blank" rel="noopener noreferrer"
         class="btn-icon" aria-label="GitHub repository">
-        <span class="icon icon-lg icon-github" aria-hidden="true"></span>
+        <span class="icon icon-sm icon-github" aria-hidden="true"></span>
       </a>
 
       <div class="info-dropdown">
         <button type="button" class="btn-icon" popovertarget="info-menu" aria-label="Information menu">
-          <span class="icon icon-lg icon-info" aria-hidden="true"></span>
+          <span class="icon icon-sm icon-info" aria-hidden="true"></span>
         </button>
 
         <div id="info-menu" popover class="dropdown-menu info-menu" role="menu">
           <div class="info-menu-header">
-            <h2>About</h2>
+            <h2>about</h2>
           </div>
 
           <div class="info-menu-content">
-            <p>Query and explore CSV data through a backend search engine.</p>
+            <p>Query and explore your CSV data.</p>
             <hr class="info-divider">
 
             <ul class="info-features">
               <li>
                 <span class="info-feature-name">Reorder</span>
-                <span class="info-feature-desc">Drag and orient your data</span>
+                <span class="info-feature-desc">Drag to orient your data</span>
               </li>
               <li>
                 <span class="info-feature-name">Pin</span>
-                <span class="info-feature-desc">Double-click to fix it in place</span>
+                <span class="info-feature-desc desc-desktop">Double-click to fix it in place</span>
+                <span class="info-feature-desc desc-mobile">Double-tap to fix it in place</span>
               </li>
               <li>
                 <span class="info-feature-name">Copy</span>
-                <span class="info-feature-desc desc-desktop">Click the icon on hover</span>
-                <span class="info-feature-desc desc-mobile">Hold row to copy data</span>
+                <span class="info-feature-desc desc-desktop">Click to add to clipboard</span>
+                <span class="info-feature-desc desc-mobile">Press and hold to add to clipboard</span>
+              </li>
+              <li>
+                <span class="info-feature-name">Filter</span>
+                <span class="info-feature-desc">For more detailed results</span>
               </li>
               <li>
                 <span class="info-feature-name">Expand</span>
-                <span class="info-feature-desc">Click a truncated cell to see more</span>
+                <span class="info-feature-desc desc-desktop">Click truncated cells to see more</span>
+                <span class="info-feature-desc desc-mobile">Tap truncated cells to see more</span>
               </li>
             </ul>
 
@@ -62,7 +68,7 @@
             <a href="https://www.kaggle.com/datasets/alanvourch/tmdb-movies-daily-updates?resource=download"
               class="info-dataset-link" target="_blank" rel="noopener noreferrer">
               <span>View dataset source</span>
-              <span class="icon icon-link" aria-hidden="true"></span>
+              <span class="icon icon-sm icon-link" aria-hidden="true"></span>
             </a>
           </div>
         </div>
@@ -71,7 +77,7 @@
   </nav>
 
   <header class="header">
-    <h1>skopos</h1>
+    <h1>telemachus</h1>
   </header>
 
   <main class="page-layout">
@@ -81,9 +87,11 @@
       </form>
 
       <div class="header-notice">
-        <p class="notice-line">Exploring the TMDB + IMDb dataset</p>
-        <p class="notice-line">More filters coming soon</p>
-        <p class="notice-line">Click the info icon to view features</p>
+        <p class="notice-line">TMDB + IMDb dataset</p>
+        <p class="notice-line">click the <span class="icon icon-info notice-icon" aria-hidden="true"></span> icon to
+          explore features</p>
+        <p class="notice-line">http ingestion is slow on the free server, so the demo uses a default dataset</p>
+        <p class="notice-line">download the repo to use your own dataset.</p>
       </div>
     </search>
 
@@ -91,15 +99,23 @@
       <div class="table-toolbar">
         <div class="toolbar-status" data-toolbar-status aria-live="polite"></div>
 
+        <div class="value-filter">
+          <button type="button" class="btn-icon" popovertarget="value-menu" aria-label="Filter values">
+            <span class="icon icon-lg icon-filter" aria-hidden="true"></span>
+          </button>
+
+          <div id="value-menu" class="value-menu" popover></div>
+        </div>
+
         <button type="button" class="btn-icon btn-fullscreen" aria-label="Toggle fullscreen" aria-pressed="false">
-          <span class="icon icon-fullscreen" aria-hidden="true"></span>
+          <span class="icon icon-lg icon-fullscreen" aria-hidden="true"></span>
         </button>
 
         <div class="column-filter">
           <button type="button" class="btn-filter" popovertarget="filter-menu" aria-expanded="false"
             aria-label="Filter columns">
             <span class="filter-count"></span>
-            <span class="icon icon-chevron-down filter-chevron" aria-hidden="true"></span>
+            <span class="icon icon-lg icon-chevron-down filter-chevron" aria-hidden="true"></span>
           </button>
 
           <div id="filter-menu" class="filter-menu" popover>

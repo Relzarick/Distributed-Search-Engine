@@ -1,6 +1,6 @@
 # Distributed Search Engine
 
-Visit the site at: https://skopos.relzarick.com/
+Visit the site at: https://telemachus.relzarick.com/
 
 ## Setup
 
