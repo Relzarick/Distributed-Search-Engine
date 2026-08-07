@@ -11,10 +11,7 @@ export default {
       const proxyRequest = new Request(targetUrl, {
         method: request.method,
         headers: newHeaders,
-        body:
-          request.method !== "GET" && request.method !== "HEAD"
-            ? request.body
-            : null,
+        body: request.method !== "GET" && request.method !== "HEAD" ? request.body : null,
       });
 
       return fetch(proxyRequest);

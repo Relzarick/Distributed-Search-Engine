@@ -10,11 +10,11 @@ export class SearchService {
     this.activeController = null;
   }
 
-  async search(query = "", page = 0, limit = 50) {
+  async search(query, offset = 0, size = 75) {
     this.activeController?.abort();
     this.activeController = new AbortController();
 
-    const params = new URLSearchParams({ q: query, page, limit });
+    const params = new URLSearchParams({ q: query, offset, size });
 
     try {
       const res = await fetch(`${this.baseUrl}?${params}`, { signal: this.activeController.signal });
@@ -23,14 +23,12 @@ export class SearchService {
       const json = await res.json();
       this.activeController = null;
 
-      if (Array.isArray(json)) return { items: json, totalPages: null };
-
       return {
-        items: json.items || json.data || [],
-        totalPages: typeof json.totalPages === "number" ? json.totalPages : null,
+        rows: json.rows || [],
+        count: json.count,
       };
     } catch (err) {
-      if (err.name === "AbortError") return { aborted: true, items: [], totalPages: null };
+      if (err.name === "AbortError") return { aborted: true, rows: [], count: 0 };
       this.activeController = null;
       throw err;
     }
@@ -44,8 +42,8 @@ const createInitialState = () => ({
   activeFilterHeaders: new Set(),
   lastQuery: null,
   page: 0,
-  pageSize: 50,
-  totalPages: 5,
+  pageSize: 75,
+  totalPages: null,
 });
 
 const $ = (selector) => document.querySelector(selector);
@@ -170,7 +168,8 @@ export class SearchApp {
     this.searchBar.setLoading(true);
 
     try {
-      const response = await this.searchService.search(this.state.lastQuery, this.state.page, this.state.pageSize);
+      const offset = this.state.page * this.state.pageSize;
+      const response = await this.searchService.search(this.state.lastQuery, offset, this.state.pageSize);
       if (!response.aborted) this.processSearchResults(response);
     } catch (error) {
       console.error("Search failed:", error);
@@ -203,16 +202,16 @@ export class SearchApp {
     return schema;
   }
 
-  processSearchResults({ items, totalPages }) {
-    this.state.data = items;
-    if (totalPages !== null) this.state.totalPages = totalPages;
+  processSearchResults({ rows, count }) {
+    this.state.data = rows;
+    if (typeof count === "number") this.state.totalPages = Math.ceil(count / this.state.pageSize);
 
     const hasData = Boolean(this.state.data.length);
     if (this.container) this.container.hidden = !hasData;
     if (this.paginationContainer) this.paginationContainer.hidden = !hasData;
     if (!hasData) return;
 
-    const incomingHeaders = Object.keys(items[0]).filter((k) => k !== "_id");
+    const incomingHeaders = Object.keys(rows[0]).filter((k) => k !== "_id");
 
     if (!this.state.headers.length) {
       this.state.headers = incomingHeaders;
@@ -225,7 +224,7 @@ export class SearchApp {
       newHeaders.forEach((h) => this.state.visibleHeaders.add(h));
     }
 
-    this.valueFilter.schema = this.detectSchema(this.state.headers, items[0]);
+    this.valueFilter.schema = this.detectSchema(this.state.headers, rows[0]);
 
     this.finishRender();
     this.grid.fitHeadersToWidth(this.state.headers, this.state.visibleHeaders);
@@ -255,5 +254,5 @@ export class SearchApp {
 
 const startApp = () => new SearchApp();
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startApp);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => startApp());
 else startApp();

@@ -1,10 +1,9 @@
 export class Pagination {
-  constructor(container, onPageChange, defaultTotalPages = 5) {
+  constructor(container, onPageChange, totalPages) {
     this.container = container;
     this.onPageChange = onPageChange;
-    this.defaultTotalPages = defaultTotalPages;
     this.currentPage = 1;
-    this.totalPages = defaultTotalPages;
+    this.totalPages = totalPages;
 
     if (this.container) this.container.addEventListener("click", (e) => this.handleClick(e));
   }
@@ -38,11 +37,11 @@ export class Pagination {
     return Array.from({ length: Math.max(0, end - start + 1) }, (_, i) => start + i);
   }
 
-  render(currentPage = 1, totalPages = null) {
+  render(currentPage, totalPages) {
     if (!this.container) return;
 
     this.currentPage = Math.max(1, currentPage);
-    this.totalPages = Math.max(1, totalPages ?? this.defaultTotalPages);
+    this.totalPages = Math.max(1, totalPages);
     if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
 
     const activeElement = document.activeElement;
