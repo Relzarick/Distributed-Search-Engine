@@ -10,7 +10,7 @@
     },
   ],
   "assets": {
-    "directory": ".",
+    "directory": "./public",
   },
   "observability": {
     "enabled": true,
