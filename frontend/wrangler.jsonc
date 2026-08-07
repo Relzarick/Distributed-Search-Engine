@@ -1,11 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "search-engine",
+  "name": "distributed-search-engine",
   "main": "src/index.js",
   "compatibility_date": "2026-08-04",
   "routes": [
     {
-      "pattern": "skopos.relzarick.com",
+      "pattern": "telemachus.relzarick.com",
       "custom_domain": true,
     },
   ],
