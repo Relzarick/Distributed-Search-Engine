@@ -10,6 +10,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertManyOptions;
 import org.bson.BsonDocument;
 import org.bson.UuidRepresentation;
+import search.DocumentResults;
 
 import java.util.ArrayList;
 import java.util.List;

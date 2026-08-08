@@ -1,4 +1,4 @@
-package mongo;
+package search;
 
 import org.bson.BsonDocument;
 
@@ -10,10 +10,13 @@ public record DocumentResults(List<BsonDocument> documents) {
      *
      * @return A Json document for frontend
      */
-    public String jsonify() {
-        return documents.stream()
+    public String jsonify(int count) {
+        String rows = documents.stream()
                 .map(BsonDocument::toJson)
                 .collect(Collectors.joining(",", "[", "]"));
+
+
+        return "{\"count\": %d, \"rows\": %s}".formatted(count, rows);
     }
 
 }

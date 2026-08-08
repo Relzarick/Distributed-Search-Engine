@@ -32,21 +32,11 @@ public class SearchHandler implements HttpHandler {
                 return;
             }
 
-            int page = 0;
+            int size = checkParam(queryParams, "size");
+            int offset = checkParam(queryParams, "offset");
 
-            // Makes sure page param is valid
-            if (queryParams.containsKey("page")) {
-                try {
-                    page = Integer.parseInt(queryParams.get("page"));
-
-                    if (page < 0)
-                        page = 0;
-                } catch (NumberFormatException e) {
-                    logger.warn("Invalid page number provided, defaulting to 0");
-                }
-            }
-
-            String response = service.find(searchQuery, page);
+            size = Math.min(100, size);
+            String response = service.find(searchQuery, offset, size);
 
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
@@ -86,6 +76,20 @@ public class SearchHandler implements HttpHandler {
             }
         }
         return params;
+    }
+
+    private int checkParam(Map<String, String> queryParams, String param) {
+        if (queryParams.containsKey(param)) {
+            try {
+                int output = Integer.parseInt(queryParams.get(param));
+
+                return Math.max(output, 0);
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid {} provided, defaulting to 0", param);
+            }
+        }
+
+        return 0;
     }
 
     private void sendResponses(HttpExchange exchange, int code, byte[] bytes) throws IOException {

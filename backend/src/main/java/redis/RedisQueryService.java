@@ -1,5 +1,7 @@
 package redis;
 
+import search.QueryResult;
+
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -16,7 +18,7 @@ public class RedisQueryService implements AutoCloseable {
         };
     }
 
-    public List<UUID> fetchFromRedis(List<String> tokens, int start, int range) {
+    public QueryResult fetchFromRedis(List<String> tokens, int offset, int size) {
         Set<UUID> result = null;
 
         for (String token : tokens) {
@@ -40,12 +42,12 @@ public class RedisQueryService implements AutoCloseable {
         List<UUID> sorted = new ArrayList<>(result == null ? Set.of() : result);
         sorted.sort(Comparator.naturalOrder());
 
-        int end = Math.min(start + range, sorted.size()); // So doesn't go out of bound
+        int end = Math.min(offset + size, sorted.size()); // So doesn't go out of bound
 
-        if (start >= sorted.size()) // return if start is already out of bound
-            return List.of();
+        if (offset >= sorted.size()) // return if start is already out of bound
+            return new QueryResult(List.of(), 0);
 
-        return sorted.subList(start, end);
+        return new QueryResult(sorted.subList(offset, end), sorted.size());
     }
 
     @Override
