@@ -1,9 +1,9 @@
 export class Pagination {
-  constructor(container, onPageChange, totalPages) {
+  constructor(container, onPageChange) {
     this.container = container;
     this.onPageChange = onPageChange;
     this.currentPage = 1;
-    this.totalPages = totalPages;
+    this.totalPages = 1;
 
     if (this.container) this.container.addEventListener("click", (e) => this.handleClick(e));
   }

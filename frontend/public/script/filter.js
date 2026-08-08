@@ -159,6 +159,8 @@ export class ColumnFilter extends BaseFilter {
   }
 }
 
+const VALUE_INPUT_DEBOUNCE_MS = 200;
+
 export class ValueFilter extends BaseFilter {
   constructor(elements, { schema = new Map() } = {}) {
     super(elements);
@@ -167,6 +169,7 @@ export class ValueFilter extends BaseFilter {
     this.activeHeaders = new Set();
     this.headers = [];
     this.container = null;
+    this.debounceTimers = new Map();
     this.initEventListeners();
   }
 
@@ -205,6 +208,15 @@ export class ValueFilter extends BaseFilter {
     );
   }
 
+  dispatchFilterChangeDebounced(header, filter) {
+    clearTimeout(this.debounceTimers.get(header));
+    const timer = setTimeout(() => {
+      this.dispatchFilterChange(header, filter);
+      this.debounceTimers.delete(header);
+    }, VALUE_INPUT_DEBOUNCE_MS);
+    this.debounceTimers.set(header, timer);
+  }
+
   createDefaultFilter(type) {
     return {
       mode: type === "string" ? "contains" : "eq",
@@ -225,7 +237,7 @@ export class ValueFilter extends BaseFilter {
     for (const child of this.container.children) {
       const header = child.dataset.header || "";
       const displayString = header.replace(/_/g, " ").toLowerCase();
-      child.style.display = displayString.includes(lowerTerm) ? "" : "none";
+      child.hidden = !displayString.includes(lowerTerm);
     }
   }
 
@@ -281,7 +293,7 @@ export class ValueFilter extends BaseFilter {
     if (rawValue === "") filter[role] = type === "string" ? "" : null;
     else filter[role] = type === "string" || type === "date" ? rawValue : Number(rawValue);
 
-    this.dispatchFilterChange(header, filter);
+    this.dispatchFilterChangeDebounced(header, filter);
   }
 
   buildInputsHtml(header, filter, type) {
@@ -376,16 +388,13 @@ export class ValueFilter extends BaseFilter {
   }
 
   filterData(data = []) {
-    if (!this.activeHeaders.size) return data;
+    if (!this.filters.size) return data;
     return data.filter((row) => this.matchesRow(row));
   }
 
   matchesRow(row) {
     if (!row) return false;
-    for (const header of this.activeHeaders) {
-      const filter = this.filters.get(header);
-      if (!filter) continue;
-
+    for (const [header, filter] of this.filters) {
       const type = this.schema.get(header) || "string";
       const val = row[header];
 

@@ -35,24 +35,29 @@ export class SearchService {
   }
 }
 
-const createInitialState = () => ({
-  data: [],
-  headers: [],
-  visibleHeaders: new Set(),
-  activeFilterHeaders: new Set(),
-  lastQuery: null,
-  page: 0,
-  pageSize: 75,
-  totalPages: null,
-});
-
 const $ = (selector) => document.querySelector(selector);
 
-export class SearchApp {
-  constructor(searchService = new SearchService()) {
-    this.searchService = searchService;
-    this.state = createInitialState();
+const setVisibility = (el, isVisible) => {
+  if (el) el.hidden = !isVisible;
+};
 
+const isDateString = (val) => {
+  if (typeof val !== "string") return false;
+  if (!isNaN(Number(val))) return false;
+  if (isNaN(Date.parse(val))) return false;
+  return val.includes("-") || val.includes("/");
+};
+
+export class SearchResultsView {
+  constructor({
+    onSearch,
+    onHeaderToggle,
+    onToggleAllHeaders,
+    onValueFilterChange,
+    onHeaderReorder,
+    onHeaderAutoFit,
+    onPageChange,
+  }) {
     this.container = $("[data-table-container]");
     this.tableFrame = $("[data-table-frame]");
     this.paginationContainer = $(".pagination-container");
@@ -61,7 +66,7 @@ export class SearchApp {
 
     this.notifier = new StatusNotifier($("[data-toolbar-status]"));
 
-    this.searchBar = new SearchBar($(".search-form"), $('input[name="query"]'), (query) => this.handleSearch(query));
+    this.searchBar = new SearchBar($(".search-form"), $('input[name="query"]'), (query) => onSearch(query));
 
     this.grid = new ResultsTable(
       {
@@ -70,8 +75,8 @@ export class SearchApp {
         body: $("[data-table-body]"),
       },
       {
-        onHeaderReorder: (headers) => this.handleHeaderReorder(headers),
-        onHeaderAutoFit: (visibleSet) => this.handleHeaderAutoFit(visibleSet),
+        onHeaderReorder: (headers) => onHeaderReorder(headers),
+        onHeaderAutoFit: (visibleSet) => onHeaderAutoFit(visibleSet),
         onRowCopy: (row) => {
           navigator.clipboard.writeText(JSON.stringify(row, null, 2));
           this.notifier.notify(NotificationSource.ROW_COPY);
@@ -89,8 +94,8 @@ export class SearchApp {
         alignTo: $(".table-frame"),
       },
       {
-        onToggle: (header, checked) => this.handleHeaderToggle(header, checked),
-        onToggleAll: (checked) => this.handleToggleAllHeaders(checked),
+        onToggle: (header, checked) => onHeaderToggle(header, checked),
+        onToggleAll: (checked) => onToggleAllHeaders(checked),
       },
     );
 
@@ -101,14 +106,10 @@ export class SearchApp {
     });
 
     this.valueFilter.elements.menu?.addEventListener("value-filter-change", (e) => {
-      this.handleValueFilterChange(e.detail.header, e.detail.filter);
+      onValueFilterChange(e.detail.header, e.detail.filter);
     });
 
-    this.pagination = new Pagination(
-      this.paginationContainer,
-      (page) => this.handlePageChange(page),
-      this.state.totalPages,
-    );
+    this.pagination = new Pagination(this.paginationContainer, (page) => onPageChange(page));
 
     if (this.fullscreenBtn) this.fullscreenBtn.addEventListener("click", () => this.toggleFullscreen());
   }
@@ -125,8 +126,83 @@ export class SearchApp {
     });
   }
 
+  setLoading(isLoading) {
+    this.searchBar.setLoading(isLoading);
+  }
+
+  hideHeaderNotice() {
+    this.headerNotice?.classList.add("is-hidden");
+  }
+
+  setSchema(schema) {
+    this.valueFilter.schema = schema;
+  }
+
+  setResultsVisibility(hasData) {
+    setVisibility(this.container, hasData);
+    setVisibility(this.paginationContainer, hasData);
+  }
+
+  updateAutoFitColumns(headers, visibleHeaders) {
+    this.columnFilter.render(headers, visibleHeaders);
+  }
+
+  fitHeadersToWidth(headers, visibleHeaders) {
+    this.grid.fitHeadersToWidth(headers, visibleHeaders);
+  }
+
+  renderGrid(state) {
+    const hasColumns = state.visibleHeaders.size > 0;
+    if (!hasColumns) return;
+
+    const filteredData = this.valueFilter.filterData(state.data);
+    this.grid.render(filteredData, state.headers, state.visibleHeaders);
+  }
+
+  finishRender(state) {
+    const hasColumns = state.visibleHeaders.size > 0;
+
+    setVisibility(this.tableFrame, hasColumns);
+    setVisibility(this.paginationContainer, hasColumns);
+
+    this.columnFilter.render(state.headers, state.visibleHeaders);
+    this.valueFilter.render(state.headers);
+    this.pagination.render(state.page + 1, state.totalPages);
+
+    if (hasColumns) this.renderGrid(state);
+  }
+}
+
+const createInitialState = () => ({
+  data: [],
+  headers: [],
+  visibleHeaders: new Set(),
+  lastQuery: null,
+  page: 0,
+  pageSize: 75,
+  totalPages: null,
+});
+
+export class SearchApp {
+  constructor(searchService = new SearchService(), view = null) {
+    this.searchService = searchService;
+    this.state = createInitialState();
+
+    this.view =
+      view ||
+      new SearchResultsView({
+        onSearch: (query) => this.handleSearch(query),
+        onHeaderToggle: (header, checked) => this.handleHeaderToggle(header, checked),
+        onToggleAllHeaders: (checked) => this.handleToggleAllHeaders(checked),
+        onValueFilterChange: (header, filter) => this.handleValueFilterChange(header, filter),
+        onHeaderReorder: (headers) => this.handleHeaderReorder(headers),
+        onHeaderAutoFit: (visibleSet) => this.handleHeaderAutoFit(visibleSet),
+        onPageChange: (page) => this.handlePageChange(page),
+      });
+  }
+
   async handleSearch(query) {
-    if (this.headerNotice) this.headerNotice.classList.add("is-hidden");
+    this.view.hideHeaderNotice();
     this.state.lastQuery = query;
     this.state.page = 0;
     await this.fetchData();
@@ -138,34 +214,34 @@ export class SearchApp {
   }
 
   handleHeaderToggle(header, isChecked) {
-    isChecked ? this.state.visibleHeaders.add(header) : this.state.visibleHeaders.delete(header);
-    this.finishRender();
+    if (isChecked) this.state.visibleHeaders.add(header);
+    else this.state.visibleHeaders.delete(header);
+    this.view.finishRender(this.state);
   }
 
   handleToggleAllHeaders(isChecked) {
     this.state.visibleHeaders = isChecked ? new Set(this.state.headers) : new Set();
-    this.finishRender();
+    this.view.finishRender(this.state);
   }
 
-  handleValueFilterChange(header, filter) {
-    filter ? this.state.activeFilterHeaders.add(header) : this.state.activeFilterHeaders.delete(header);
-    this.renderGrid();
+  handleValueFilterChange() {
+    this.view.renderGrid(this.state);
   }
 
   handleHeaderReorder(newHeaders) {
     this.state.headers = newHeaders;
-    this.finishRender();
+    this.view.finishRender(this.state);
   }
 
   handleHeaderAutoFit(updatedVisibleSet) {
     this.state.visibleHeaders = updatedVisibleSet;
-    this.columnFilter.render(this.state.headers, this.state.visibleHeaders);
+    this.view.updateAutoFitColumns(this.state.headers, this.state.visibleHeaders);
   }
 
   async fetchData() {
     if (this.state.lastQuery === null) return;
 
-    this.searchBar.setLoading(true);
+    this.view.setLoading(true);
 
     try {
       const offset = this.state.page * this.state.pageSize;
@@ -174,7 +250,7 @@ export class SearchApp {
     } catch (error) {
       console.error("Search failed:", error);
     } finally {
-      this.searchBar.setLoading(false);
+      this.view.setLoading(false);
     }
   }
 
@@ -188,13 +264,7 @@ export class SearchApp {
 
       if (typeof val === "number") type = "number";
       else if (val instanceof Date) type = "date";
-      else if (
-        typeof val === "string" &&
-        isNaN(Number(val)) &&
-        !isNaN(Date.parse(val)) &&
-        (val.includes("-") || val.includes("/"))
-      )
-        type = "date";
+      else if (isDateString(val)) type = "date";
 
       schema.set(header, type);
     });
@@ -207,8 +277,7 @@ export class SearchApp {
     if (typeof count === "number") this.state.totalPages = Math.ceil(count / this.state.pageSize);
 
     const hasData = Boolean(this.state.data.length);
-    if (this.container) this.container.hidden = !hasData;
-    if (this.paginationContainer) this.paginationContainer.hidden = !hasData;
+    this.view.setResultsVisibility(hasData);
     if (!hasData) return;
 
     const incomingHeaders = Object.keys(rows[0]).filter((k) => k !== "_id");
@@ -224,31 +293,10 @@ export class SearchApp {
       newHeaders.forEach((h) => this.state.visibleHeaders.add(h));
     }
 
-    this.valueFilter.schema = this.detectSchema(this.state.headers, rows[0]);
+    this.view.setSchema(this.detectSchema(this.state.headers, rows[0]));
 
-    this.finishRender();
-    this.grid.fitHeadersToWidth(this.state.headers, this.state.visibleHeaders);
-  }
-
-  renderGrid() {
-    const hasColumns = this.state.visibleHeaders.size > 0;
-    if (!hasColumns) return;
-
-    const filteredData = this.valueFilter.filterData(this.state.data);
-    this.grid.render(filteredData, this.state.headers, this.state.visibleHeaders);
-  }
-
-  finishRender() {
-    const hasColumns = this.state.visibleHeaders.size > 0;
-
-    if (this.tableFrame) this.tableFrame.hidden = !hasColumns;
-    if (this.paginationContainer) this.paginationContainer.hidden = !hasColumns;
-
-    this.columnFilter.render(this.state.headers, this.state.visibleHeaders);
-    this.valueFilter.render(this.state.headers);
-    this.pagination.render(this.state.page + 1, this.state.totalPages);
-
-    if (hasColumns) this.renderGrid();
+    this.view.finishRender(this.state);
+    this.view.fitHeadersToWidth(this.state.headers, this.state.visibleHeaders);
   }
 }
 

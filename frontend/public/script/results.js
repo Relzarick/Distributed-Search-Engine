@@ -137,6 +137,7 @@ class TableEvents {
     if (!th) return;
     this.draggedHeader = th.dataset.header;
     e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", this.draggedHeader);
   }
 
   handleHeaderDrop(e) {
@@ -144,11 +145,8 @@ class TableEvents {
     const th = e.target.closest("th");
     if (!th || !this.draggedHeader) return;
 
-    const headers = [...this.table.currentHeaders];
-    const moved = this.table.moveItem(headers, headers.indexOf(this.draggedHeader), headers.indexOf(th.dataset.header));
+    this.table.reorderHeader(this.draggedHeader, th.dataset.header);
     this.draggedHeader = null;
-
-    if (moved) this.table.onHeaderReorder(headers);
   }
 
   handleRowDragStart(e) {
@@ -158,6 +156,7 @@ class TableEvents {
 
     this.draggedRowId = tr.dataset.rowId;
     e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", this.draggedRowId);
   }
 
   handleRowDrop(e) {
@@ -165,16 +164,8 @@ class TableEvents {
     if (!tr || this.draggedRowId === null) return;
     e.preventDefault();
 
-    const pinnedArray = [...this.table.pinnedRows.values()];
-    const fromIdx = pinnedArray.findIndex((r) => this.table.getRowKey(r) === this.draggedRowId);
-    const toIdx = pinnedArray.findIndex((r) => this.table.getRowKey(r) === tr.dataset.rowId);
+    this.table.reorderPinnedRow(this.draggedRowId, tr.dataset.rowId);
     this.draggedRowId = null;
-
-    if (!this.table.moveItem(pinnedArray, fromIdx, toIdx)) return;
-
-    this.table.pinnedRows = new Map(pinnedArray.map((r) => [this.table.getRowKey(r), r]));
-    this.table.reorderDOMRows();
-    TableRenderer.applyRowOffsets(this.table.elements.head, this.table.elements.body);
   }
 
   initDesktopHoverAndCopy() {
@@ -194,11 +185,7 @@ class TableEvents {
 
       let topLimit = wrapperRect.top + headHeight;
       if (!isPinned) {
-        const pinnedTotalHeight = Array.from(body.querySelectorAll("tr.pinned")).reduce(
-          (acc, r) => acc + r.offsetHeight,
-          0,
-        );
-        topLimit += pinnedTotalHeight;
+        topLimit += this.table.getPinnedRowsHeight();
       }
 
       if (trRect.top < topLimit - 1 || trRect.bottom > wrapperRect.bottom + 1) {
@@ -273,10 +260,7 @@ class TableEvents {
         const touch = e.changedTouches[0];
         const targetTh = document.elementFromPoint(touch.clientX, touch.clientY)?.closest("th");
         if (targetTh && targetTh.dataset.header !== activeHeader) {
-          const headers = [...this.table.currentHeaders];
-          if (this.table.moveItem(headers, headers.indexOf(activeHeader), headers.indexOf(targetTh.dataset.header))) {
-            this.table.onHeaderReorder(headers);
-          }
+          this.table.reorderHeader(activeHeader, targetTh.dataset.header);
         }
       }
       activeHeader = null;
@@ -357,15 +341,7 @@ class TableEvents {
           const touch = e.changedTouches[0];
           const targetTr = document.elementFromPoint(touch.clientX, touch.clientY)?.closest("tr.pinned");
           if (targetTr && targetTr.dataset.rowId !== activeDragRowId) {
-            const pinnedArray = [...this.table.pinnedRows.values()];
-            const fromIdx = pinnedArray.findIndex((r) => this.table.getRowKey(r) === activeDragRowId);
-            const toIdx = pinnedArray.findIndex((r) => this.table.getRowKey(r) === targetTr.dataset.rowId);
-
-            if (this.table.moveItem(pinnedArray, fromIdx, toIdx)) {
-              this.table.pinnedRows = new Map(pinnedArray.map((r) => [this.table.getRowKey(r), r]));
-              this.table.reorderDOMRows();
-              TableRenderer.applyRowOffsets(this.table.elements.head, this.table.elements.body);
-            }
+            this.table.reorderPinnedRow(activeDragRowId, targetTr.dataset.rowId);
           }
         }
         activeDragRowId = null;
@@ -415,10 +391,7 @@ export class ResultsTable {
     this.pinnedRows = new Map();
     this.currentData = [];
     this.currentHeaders = [];
-    this.currentVisibleHeaders = new Set();
 
-    this.nextFallbackId = 0;
-    this.fallbackIdMap = new WeakMap();
     this.idToRowMap = new Map();
 
     this.isMobile = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
@@ -430,13 +403,7 @@ export class ResultsTable {
   }
 
   getRowKey(row) {
-    let key;
-    if (row?._id !== undefined && row._id !== null) {
-      key = `id:${row._id}`;
-    } else {
-      if (!this.fallbackIdMap.has(row)) this.fallbackIdMap.set(row, `tmp:${++this.nextFallbackId}`);
-      key = this.fallbackIdMap.get(row);
-    }
+    const key = `id:${row._id}`;
     this.idToRowMap.set(key, row);
     return key;
   }
@@ -445,6 +412,30 @@ export class ResultsTable {
     if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return false;
     array.splice(toIdx, 0, array.splice(fromIdx, 1)[0]);
     return true;
+  }
+
+  reorderHeader(fromHeader, toHeader) {
+    const headers = [...this.currentHeaders];
+    if (this.moveItem(headers, headers.indexOf(fromHeader), headers.indexOf(toHeader))) {
+      this.onHeaderReorder(headers);
+    }
+  }
+
+  reorderPinnedRow(fromRowId, toRowId) {
+    const pinnedArray = [...this.pinnedRows.values()];
+    const fromIdx = pinnedArray.findIndex((r) => this.getRowKey(r) === fromRowId);
+    const toIdx = pinnedArray.findIndex((r) => this.getRowKey(r) === toRowId);
+
+    if (!this.moveItem(pinnedArray, fromIdx, toIdx)) return;
+
+    this.pinnedRows = new Map(pinnedArray.map((r) => [this.getRowKey(r), r]));
+    this.reorderDOMRows();
+    TableRenderer.applyRowOffsets(this.elements.head, this.elements.body);
+  }
+
+  getPinnedRowsHeight() {
+    const pinnedTrs = [...(this.elements.body?.querySelectorAll("tr.pinned") || [])];
+    return pinnedTrs.reduce((sum, tr) => sum + tr.offsetHeight, 0);
   }
 
   getOrderedRows() {
@@ -489,8 +480,7 @@ export class ResultsTable {
       TableRenderer.clearRowOffsets(tr);
     } else {
       const headerHeight = this.elements.head?.offsetHeight || 0;
-      const pinnedTrs = [...(this.elements.body?.querySelectorAll("tr.pinned") || [])];
-      const currentPinnedHeight = pinnedTrs.reduce((sum, pTr) => sum + pTr.offsetHeight, 0);
+      const currentPinnedHeight = this.getPinnedRowsHeight();
       const wrapperHeight = this.elements.wrapper?.clientHeight || 0;
 
       if (headerHeight + currentPinnedHeight + tr.offsetHeight >= wrapperHeight) return;
@@ -545,7 +535,6 @@ export class ResultsTable {
   render(data = [], headers = [], visibleHeaders = new Set()) {
     this.currentData = data;
     this.currentHeaders = headers;
-    this.currentVisibleHeaders = visibleHeaders;
 
     const visible = TableRenderer.getVisibleHeaders(headers, visibleHeaders);
     TableRenderer.renderHeaders(this.elements.head, visible);
@@ -566,6 +555,14 @@ export class ResultsTable {
     );
 
     TableRenderer.applyRowOffsets(this.elements.head, this.elements.body);
+    TableRenderer.markTruncatedCells(this.elements.body);
+  }
+
+  applyRowOffsets() {
+    TableRenderer.applyRowOffsets(this.elements.head, this.elements.body);
+  }
+
+  markTruncatedCells() {
     TableRenderer.markTruncatedCells(this.elements.body);
   }
 }
