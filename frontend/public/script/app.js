@@ -64,7 +64,7 @@ export class SearchResultsView {
     this.fullscreenBtn = $(".btn-fullscreen");
     this.headerNotice = $(".header-notice");
 
-    this.notifier = new StatusNotifier($("[data-toolbar-status]"));
+    this.notifier = new StatusNotifier($("[data-status-message]"));
 
     this.searchBar = new SearchBar($(".search-form"), $('input[name="query"]'), (query) => onSearch(query));
 
@@ -114,6 +114,14 @@ export class SearchResultsView {
     if (this.fullscreenBtn) this.fullscreenBtn.addEventListener("click", () => this.toggleFullscreen());
   }
 
+  notifySearchResults(count) {
+    if (count === 0) {
+      this.notifier.notify(NotificationSource.NO_RESULTS);
+    } else {
+      this.notifier.notify(NotificationSource.SEARCH_RESULTS, count);
+    }
+  }
+
   toggleFullscreen() {
     if (!this.container) return;
     const isFullscreen = this.container.classList.toggle("is-fullscreen");
@@ -138,9 +146,8 @@ export class SearchResultsView {
     this.valueFilter.schema = schema;
   }
 
-  setResultsVisibility(hasData) {
-    setVisibility(this.container, hasData);
-    setVisibility(this.paginationContainer, hasData);
+  setResultsVisibility(isVisible) {
+    setVisibility(this.container, isVisible);
   }
 
   updateAutoFitColumns(headers, visibleHeaders) {
@@ -160,16 +167,16 @@ export class SearchResultsView {
   }
 
   finishRender(state) {
-    const hasColumns = state.visibleHeaders.size > 0;
+    const hasDataAndColumns = state.visibleHeaders.size > 0 && state.data.length > 0;
 
-    setVisibility(this.tableFrame, hasColumns);
-    setVisibility(this.paginationContainer, hasColumns);
+    setVisibility(this.tableFrame, hasDataAndColumns);
+    setVisibility(this.paginationContainer, hasDataAndColumns);
 
     this.columnFilter.render(state.headers, state.visibleHeaders);
     this.valueFilter.render(state.headers);
     this.pagination.render(state.page + 1, state.totalPages);
 
-    if (hasColumns) this.renderGrid(state);
+    if (hasDataAndColumns) this.renderGrid(state);
   }
 }
 
@@ -274,11 +281,26 @@ export class SearchApp {
 
   processSearchResults({ rows, count }) {
     this.state.data = rows;
-    if (typeof count === "number") this.state.totalPages = Math.ceil(count / this.state.pageSize);
+    const totalCount = typeof count === "number" ? count : rows.length;
+
+    if (typeof count === "number") {
+      this.state.totalPages = Math.ceil(count / this.state.pageSize);
+    }
+
+    // Keep table-container visible so status notifier displays inside toolbar
+    this.view.setResultsVisibility(true);
+
+    // Only notify search results on initial search (page 0 / offset 0)
+    if (this.state.page === 0) {
+      this.view.notifySearchResults(totalCount);
+    }
 
     const hasData = Boolean(this.state.data.length);
-    this.view.setResultsVisibility(hasData);
-    if (!hasData) return;
+
+    if (!hasData) {
+      this.view.finishRender(this.state);
+      return;
+    }
 
     const incomingHeaders = Object.keys(rows[0]).filter((k) => k !== "_id");
 

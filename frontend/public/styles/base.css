@@ -45,7 +45,7 @@ html {
   --spacing-offset: 1.6rem;
   --spacing-layout: 1.5rem;
   --theme-transition: 0.7s ease-in-out;
-  --theme-transition-quick: 0.5s ease-out;
+  --theme-transition-quick: 0.35s ease-in;
 }
 
 body {

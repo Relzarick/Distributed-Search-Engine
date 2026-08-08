@@ -1,22 +1,29 @@
 export const NotificationSource = Object.freeze({
   ROW_COPY: "ROW_COPY",
+  NO_RESULTS: "NO_RESULTS",
+  SEARCH_RESULTS: "SEARCH_RESULTS",
 });
 
 export class StatusNotifier {
   static MESSAGES = {
     [NotificationSource.ROW_COPY]: "Copied row to clipboard",
+    [NotificationSource.NO_RESULTS]: "No results found",
+    [NotificationSource.SEARCH_RESULTS]: (count) => `Found ${count.toLocaleString()} result${count === 1 ? "" : "s"}`,
   };
 
-  constructor(element, displayDurationMs = 3000) {
+  constructor(element, displayDurationMs = 2500) {
     this.element = element;
     this.displayDurationMs = displayDurationMs;
     this.timeoutId = null;
   }
 
-  notify(sourceIdentifier) {
+  notify(sourceIdentifier, payload = null) {
     if (!this.element) return;
 
-    const message = StatusNotifier.MESSAGES[sourceIdentifier];
+    let message = StatusNotifier.MESSAGES[sourceIdentifier];
+    if (typeof message === "function") {
+      message = message(payload);
+    }
     if (!message) return;
 
     if (this.timeoutId) clearTimeout(this.timeoutId);

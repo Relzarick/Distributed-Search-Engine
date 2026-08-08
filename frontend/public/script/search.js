@@ -9,7 +9,10 @@ export class SearchBar {
 
   handleSubmit(e) {
     e.preventDefault();
-    this.onSubmit(this.input?.value.trim() || "");
+    const query = this.input?.value.trim();
+    if (!query) return;
+
+    this.onSubmit(query);
   }
 
   clear() {

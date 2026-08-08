@@ -8,8 +8,11 @@
   <link rel="stylesheet" href="styles/svg.css">
   <link rel="stylesheet" href="styles/nav.css">
   <link rel="stylesheet" href="styles/search.css">
+  <link rel="stylesheet" href="styles/toolbar.css">
   <link rel="stylesheet" href="styles/filter.css">
   <link rel="stylesheet" href="styles/results.css">
+  <link rel="stylesheet" href="styles/pagination.css">
+
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
@@ -99,10 +102,12 @@
       </div>
     </search>
 
+    <div class="status-container">
+      <div class="status-message" data-status-message aria-live="polite"></div>
+    </div>
+
     <div class="table-container" data-table-container hidden>
       <div class="table-toolbar">
-        <div class="toolbar-status" data-toolbar-status aria-live="polite"></div>
-
         <div class="value-filter">
           <button type="button" class="btn-icon" popovertarget="value-menu" aria-label="Filter values">
             <span class="icon icon-lg icon-filter" aria-hidden="true"></span>
@@ -150,6 +155,7 @@
     </div>
   </main>
 
+  <!-- <script type="module" src="script/mock.js"></script> -->
   <script type="module" src="script/app.js"></script>
 </body>
 

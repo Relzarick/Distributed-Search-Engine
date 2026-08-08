@@ -6,8 +6,6 @@ header {
     font-size: 5.6rem;
     font-weight: 700;
     margin: 0;
-    letter-spacing: -0.025em;
-    text-wrap: balance;
 
     @media (min-width: 768px) {
       font-size: 7.2rem;

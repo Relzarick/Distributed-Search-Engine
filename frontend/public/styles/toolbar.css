@@ -1,0 +1,59 @@
+.status-container {
+  position: relative;
+  width: 90dvw;
+  max-width: var(--max-width-table);
+  margin-inline: auto;
+  height: 0;
+  z-index: 20;
+}
+
+/* Floating status message element */
+.status-message {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--theme-transition-quick),
+    visibility var(--theme-transition-quick),
+    top var(--theme-transition-quick);
+
+  top: calc(var(--spacing-layout) + 3rem);
+}
+
+.status-message.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Table toolbar controls container */
+.table-toolbar {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 4rem;
+  flex-wrap: nowrap;
+}
+
+.table-toolbar > * {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .table-toolbar {
+    min-height: 3.6rem;
+  }
+
+  .status-message {
+    font-size: 1.4rem;
+    top: -8.5rem; /* Pushes message higher above the search bar input */
+  }
+}

@@ -11,31 +11,6 @@
   margin-block-start: var(--spacing-layout);
 }
 
-.table-toolbar {
-  position: relative;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.toolbar-status {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.6rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  pointer-events: none;
-  opacity: 0;
-  white-space: nowrap;
-  transition: opacity var(--theme-transition-quick);
-}
-
-.toolbar-status.is-visible {
-  opacity: 1;
-}
-
 .table-frame {
   position: relative;
   margin-bottom: var(--spacing-md);
@@ -236,47 +211,6 @@ td.expandable {
 }
 
 /* =========================================
-   PAGINATION
-   ========================================= */
-.pagination-container {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 2rem;
-}
-
-.pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 3.6rem;
-  height: 3.6rem;
-  padding: 0 1rem;
-
-  font: inherit;
-  font-size: 1.6rem;
-  font-weight: 600;
-  font-variant-numeric: lining-nums tabular-nums;
-
-  color: var(--text-secondary);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: color var(--theme-transition-quick);
-}
-
-.pagination-btn:hover:not(:disabled),
-.pagination-btn.active {
-  color: var(--color-accent);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-/* =========================================
    FULLSCREEN MODE
    ========================================= */
 .table-container.is-fullscreen {
@@ -313,6 +247,7 @@ td.expandable {
 .table-container.is-fullscreen .pagination-container {
   margin-bottom: 0;
 }
+
 /* =========================================
    EMPTY STATE
    ========================================= */

@@ -439,6 +439,9 @@ export class ResultsTable {
   }
 
   getOrderedRows() {
+    // If current data is empty, ensure no rows are returned
+    if (!this.currentData || this.currentData.length === 0) return [];
+
     const pinnedKeys = new Set(this.pinnedRows.keys());
     const unpinned = this.currentData.filter((row) => !pinnedKeys.has(this.getRowKey(row)));
     return [...this.pinnedRows.values(), ...unpinned];
@@ -538,6 +541,9 @@ export class ResultsTable {
 
     const visible = TableRenderer.getVisibleHeaders(headers, visibleHeaders);
     TableRenderer.renderHeaders(this.elements.head, visible);
+
+    // Guard against missing body element
+    if (!this.elements.body) return;
 
     if (data.length === 0) {
       const colSpan = Math.max(1, visible.length);

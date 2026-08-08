@@ -5,7 +5,9 @@ export class Pagination {
     this.currentPage = 1;
     this.totalPages = 1;
 
-    if (this.container) this.container.addEventListener("click", (e) => this.handleClick(e));
+    if (this.container) {
+      this.container.addEventListener("click", (e) => this.handleClick(e));
+    }
   }
 
   handleClick(e) {
@@ -45,8 +47,9 @@ export class Pagination {
     if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
 
     const activeElement = document.activeElement;
-    const activeAction = activeElement?.dataset?.action;
-    const activePage = activeElement?.dataset?.page;
+    const isFocusedInside = this.container.contains(activeElement);
+    const activeAction = isFocusedInside ? activeElement?.dataset?.action : null;
+    const activePage = isFocusedInside ? activeElement?.dataset?.page : null;
 
     const pageButtons = this.getPageNumbers()
       .map(
@@ -55,7 +58,7 @@ export class Pagination {
         type="button"
         class="pagination-btn ${page === this.currentPage ? "active" : ""}"
         data-page="${page}"
-        aria-current="${page === this.currentPage ? "page" : "false"}"
+        ${page === this.currentPage ? 'aria-current="page"' : ""}
         aria-label="Page ${page}">
         ${page}
       </button>`,
@@ -63,7 +66,7 @@ export class Pagination {
       .join("");
 
     this.container.innerHTML = `
-      <div class="pagination-group pagination-controls">
+      <div class="pagination-group">
         <button type="button" class="pagination-btn pagination-btn-nav" data-action="first" aria-label="First Page" ${this.currentPage === 1 ? "disabled" : ""}>
           <span class="icon icon-sm icon-chevrons-left" aria-hidden="true"></span>
         </button>
@@ -72,9 +75,9 @@ export class Pagination {
         </button>
       </div>
 
-      <div class="pagination-group pagination-pages">${pageButtons}</div>
+      <div class="pagination-group">${pageButtons}</div>
 
-      <div class="pagination-group pagination-controls">
+      <div class="pagination-group">
         <button type="button" class="pagination-btn pagination-btn-nav" data-action="next" aria-label="Next Page" ${this.currentPage === this.totalPages ? "disabled" : ""}>
           <span class="icon icon-sm icon-chevron-right" aria-hidden="true"></span>
         </button>
